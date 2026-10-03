@@ -447,7 +447,7 @@ firmware environments, and this documentation set.
 
 Hardware-dependent (structure complete, needs the real device): motor direction
 and PWM polarity, wheel base/radius calibration, encoder feedback. Only
-`firmware/include/pin_config.hpp` and `config/navigation.json` need editing.
+`firmware/include/pin_config.hpp` and `config/navigation.json` need editing. 
 
 Future external integration: the real UWB/EKF provider
 (`RealPositionProvider` in `firmware/include/position_provider.hpp`, already
