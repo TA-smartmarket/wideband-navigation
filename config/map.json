@@ -1,0 +1,14 @@
+{
+  "map_id": "SMART_MARKET_MAIN",
+  "map_version": 1,
+  "frame_id": "smart_market_map",
+  "origin": "bottom-left",
+  "x_axis": "+X = right",
+  "y_axis": "+Y = up",
+  "unit": "meter",
+  "width_m": 12.0,
+  "height_m": 8.0,
+  "origin_x_m": 0.0,
+  "origin_y_m": 0.0,
+  "notes": "Development map for the Smart Market navigation study. Origin is the bottom-left corner; all coordinates are meters in the smart_market_map frame."
+}

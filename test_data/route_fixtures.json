@@ -1,0 +1,117 @@
+{
+  "generated_by": "scripts/generate_route_fixtures.py",
+  "source_of_truth": "navigation_core (C++ Dijkstra)",
+  "graph_path": "config/graph.json",
+  "node_count": 12,
+  "edge_count": 17,
+  "fixtures": [
+    {
+      "start_node": 1,
+      "destination_node": 11,
+      "description": "default development route: entry to the middle destination",
+      "route": [
+        1,
+        2,
+        3,
+        7,
+        11
+      ],
+      "distance_m": 10.0,
+      "reachable": true
+    },
+    {
+      "start_node": 1,
+      "destination_node": 12,
+      "description": "long diagonal route across the whole market",
+      "route": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12
+      ],
+      "distance_m": 13.0,
+      "reachable": true
+    },
+    {
+      "start_node": 9,
+      "destination_node": 4,
+      "description": "top-left corner to the checkout row",
+      "route": [
+        9,
+        5,
+        1,
+        2,
+        3,
+        4
+      ],
+      "distance_m": 13.0,
+      "reachable": true
+    },
+    {
+      "start_node": 5,
+      "destination_node": 5,
+      "description": "start equals destination",
+      "route": [
+        5
+      ],
+      "distance_m": 0.0,
+      "reachable": true
+    },
+    {
+      "start_node": 1,
+      "destination_node": 2,
+      "description": "adjacent nodes",
+      "route": [
+        1,
+        2
+      ],
+      "distance_m": 3.0,
+      "reachable": true
+    },
+    {
+      "start_node": 1,
+      "destination_node": 10,
+      "description": "entry to the left destination",
+      "route": [
+        1,
+        2,
+        6,
+        10
+      ],
+      "distance_m": 7.0,
+      "reachable": true
+    },
+    {
+      "start_node": 12,
+      "destination_node": 1,
+      "description": "reverse of the long diagonal",
+      "route": [
+        12,
+        8,
+        4,
+        3,
+        2,
+        1
+      ],
+      "distance_m": 13.0,
+      "reachable": true
+    },
+    {
+      "start_node": 4,
+      "destination_node": 9,
+      "description": "checkout row to the top-left corner",
+      "route": [
+        4,
+        3,
+        2,
+        1,
+        5,
+        9
+      ],
+      "distance_m": 13.0,
+      "reachable": true
+    }
+  ]
+}

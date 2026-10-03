@@ -1,0 +1,514 @@
+[
+  {
+    "name": "scenario_01_basic_navigation",
+    "description": "Straightforward navigation with a clean UWB signal.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.02,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": false,
+    "expectation": "Trolley follows 1 -> 2 -> 3 -> 7 -> 11 and stops at node 11."
+  },
+  {
+    "name": "scenario_02_long_route",
+    "description": "Longest route across the market (entry to the far corner).",
+    "start": {
+      "x_m": 1.5,
+      "y_m": 2.0,
+      "theta_rad": 0.0
+    },
+    "destination_node": 12,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.02,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": false,
+    "expectation": "Full diagonal traversal with several waypoints."
+  },
+  {
+    "name": "scenario_03_multiple_turns",
+    "description": "Many heading changes: exercises corner slowdown and turning.",
+    "start": {
+      "x_m": 1.6,
+      "y_m": 6.0,
+      "theta_rad": 0.0
+    },
+    "destination_node": 4,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.02,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": false,
+    "expectation": "Corner handling keeps the trolley inside the acceptance radius."
+  },
+  {
+    "name": "scenario_04_moderate_uwb_noise",
+    "description": "Moderate Gaussian UWB noise (sigma = 0.10 m).",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.1,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": false,
+    "expectation": "Route completed with slightly higher cross-track error."
+  },
+  {
+    "name": "scenario_05_high_uwb_noise",
+    "description": "High Gaussian UWB noise (sigma = 0.20 m).",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.2,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": false,
+    "expectation": "Navigation remains safe; deviation confirmation prevents replan storms."
+  },
+  {
+    "name": "scenario_06_position_dropout",
+    "description": "UWB samples stop arriving for 2 s mid-route.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "dropout",
+        "value": 2.0,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "POSITION_LOST stops the motors, then navigation resumes/replans."
+  },
+  {
+    "name": "scenario_07_low_quality_position",
+    "description": "Quality drops below the configured threshold mid-route.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "low_quality_on",
+        "value": null,
+        "value2": null
+      },
+      {
+        "at_s": 10.0,
+        "action": "low_quality_off",
+        "value": null,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "Low quality samples are rejected exactly like invalid ones."
+  },
+  {
+    "name": "scenario_08_position_jump",
+    "description": "Measured position jumps ~1.5 m away from the true pose.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "position_jump",
+        "value": 1.5,
+        "value2": null
+      },
+      {
+        "at_s": 8.0,
+        "action": "clear_jump",
+        "value": null,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "Deviation is confirmed after 500 ms and the route is replanned."
+  },
+  {
+    "name": "scenario_09_route_deviation",
+    "description": "Trolley is physically pushed off the corridor (plant disturbance).",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "teleport",
+        "value": 1.2,
+        "value2": 1.5
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "Cross-track error exceeds the replan threshold and Dijkstra runs again."
+  },
+  {
+    "name": "scenario_10_destination_change",
+    "description": "Destination is changed while the trolley is en route.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": 4,
+      "at_s": 6.0
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "The new destination triggers a replan and the trolley diverts."
+  },
+  {
+    "name": "scenario_11_unreachable_destination",
+    "description": "Destination cannot be reached (isolated node added at runtime).",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 99,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 0.1,
+        "action": "request_unreachable",
+        "value": 99,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": false,
+    "expect_stop_or_arrival": true,
+    "expectation": "Dijkstra reports no route, the FSM enters ERROR and motors stay stopped."
+  },
+  {
+    "name": "scenario_12_emergency_stop",
+    "description": "Software emergency stop while navigating, then recovery.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "emergency_stop",
+        "value": null,
+        "value2": null
+      },
+      {
+        "at_s": 8.0,
+        "action": "clear_emergency_stop",
+        "value": null,
+        "value2": null
+      },
+      {
+        "at_s": 8.2,
+        "action": "start_navigation",
+        "value": null,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "Motors are cut instantly; after clearing, navigation resumes safely."
+  },
+  {
+    "name": "scenario_13_invalid_samples",
+    "description": "Positioning flags samples as invalid for 4 s mid-route.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "invalid_on",
+        "value": 0.5,
+        "value2": null
+      },
+      {
+        "at_s": 10.0,
+        "action": "invalid_off",
+        "value": null,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "Invalid samples are rejected; the position ages out and navigation recovers."
+  },
+  {
+    "name": "scenario_14_frozen_position",
+    "description": "UWB output freezes for 3 s while the trolley keeps moving.",
+    "start": {
+      "x_m": 0.8,
+      "y_m": 0.9,
+      "theta_rad": 0.0
+    },
+    "destination_node": 11,
+    "destination_change": {
+      "node": null,
+      "at_s": null
+    },
+    "uwb": {
+      "noise_std_m": 0.05,
+      "noise_enabled": true,
+      "dropout_probability": 0.0,
+      "dropout_enabled": false,
+      "invalid_probability": 0.0,
+      "invalid_enabled": false,
+      "low_quality_enabled": false,
+      "frozen_enabled": false,
+      "quality_base": 0.97
+    },
+    "events": [
+      {
+        "at_s": 6.0,
+        "action": "frozen_on",
+        "value": null,
+        "value2": null
+      },
+      {
+        "at_s": 9.0,
+        "action": "frozen_off",
+        "value": null,
+        "value2": null
+      }
+    ],
+    "timeout_s": 180.0,
+    "expect_success": true,
+    "expect_stop_or_arrival": true,
+    "expectation": "A frozen position is treated as stale data: navigation stops or replans safely."
+  }
+]

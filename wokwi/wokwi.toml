@@ -1,0 +1,37 @@
+; Wokwi simulation configuration for the Smart Trolley navigation firmware.
+;
+; IMPORTANT SCOPE LIMIT
+; ---------------------
+; Wokwi cannot simulate UWB radio positioning.  This environment exists only to
+; verify, in a browser, that:
+;
+;   * the firmware boots and initialises the graph and the navigation core,
+;   * Serial JSON position lines are parsed and validated,
+;   * console commands are accepted (destination / start / estop / ...),
+;   * the state machine walks BOOT -> IDLE -> WAITING_FOR_POSITION -> ... ,
+;   * motor PWM activity appears on the configured pins.
+;
+; The desktop simulator (simulator/main.py) remains the primary environment:
+; only it models trolley kinematics, UWB noise, dropouts and route deviation.
+;
+; Usage
+; -----
+;   1. Copy this file to the repository root as wokwi.toml, or point the Wokwi
+;      extension at this directory.
+;   2. Build the firmware:  pio run -e esp32-s3-devkitc-1-mock
+;   3. Start the Wokwi simulator and paste position lines into the serial
+;      monitor, e.g.:
+;        CMD:destination 11
+;        {"schema_version":1,"trolley_id":"TROLLEY_01","frame_id":"smart_market_map","timestamp_ms":1000,"position":{"x_m":0.8,"y_m":0.9},"quality":0.95,"valid":true}
+;        CMD:start
+;   4. Watch the LEDs on GPIO 4 (left PWM) and GPIO 7 (right PWM) toggle as the
+;      controller commands motion.
+;
+; The mock position provider is required: Wokwi has no UART peer for the real
+; UWB adapter, so build the -mock environment (NAVIGATION_USE_MOCK_POSITION=1).
+
+[wokwi]
+version = 1
+firmware = ".pio/build/esp32-s3-devkitc-1-mock/firmware.bin"
+elf = ".pio/build/esp32-s3-devkitc-1-mock/firmware.elf"
+rfc2217ServerPort = 4000

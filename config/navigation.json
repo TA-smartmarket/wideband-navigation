@@ -1,0 +1,86 @@
+{
+  "map": {
+    "width_m": 12.0,
+    "height_m": 8.0
+  },
+  "position": {
+    "minimum_quality": 0.6,
+    "timeout_ms": 750,
+    "heading_min_displacement_m": 0.5,
+    "heading_correction_gain": 0.35,
+    "heading_quality_baseline_boost": 2.0,
+    "stale_sample_ms": 1000,
+    "map_margin_m": 1.0,
+    "filter": {
+      "enable": false,
+      "alpha": 0.5,
+      "comment": "Optional navigation-side smoothing for integration tests only. The real EKF belongs to the UWB positioning subsystem, so this stays disabled in production."
+    }
+  },
+  "path": {
+    "max_graph_snap_distance_m": 1.5,
+    "replan_max_graph_snap_distance_m": 2.5,
+    "waypoint_tolerance_m": 0.2,
+    "destination_tolerance_m": 0.15,
+    "max_cross_track_error_m": 0.4,
+    "replan_cross_track_error_m": 0.6,
+    "route_deviation_confirm_ms": 500,
+    "replan_cooldown_ms": 1000,
+    "destination_slowdown_distance_m": 0.6,
+    "corner_slowdown_distance_m": 0.8,
+    "lookahead": {
+      "enable": false,
+      "distance_m": 0.35
+    }
+  },
+  "motion": {
+    "max_linear_speed_mps": 0.45,
+    "min_linear_speed_mps": 0.08,
+    "max_angular_speed_radps": 2.2,
+    "rotate_in_place_threshold_deg": 55.0,
+    "heading_error_slow_deg": 25.0,
+    "heading_kp": 1.6,
+    "max_linear_accel_mps2": 0.35,
+    "max_angular_accel_radps2": 2.5,
+    "heading_deadband_deg": 1.5,
+    "max_motor_command_change_per_s": 6.0
+  },
+  "heading_pid": {
+    "ki": 0.0,
+    "kd": 0.05,
+    "derivative_filter_alpha": 0.25,
+    "integral_limit": 1.0,
+    "comment": "ki/kd/filters only; the proportional gain is motion.heading_kp (single source of truth)"
+  },
+  "robot": {
+    "wheel_radius_m": 0.05,
+    "wheel_base_m": 0.32,
+    "max_wheel_speed_mps": 0.7,
+    "motor_deadband_mps": 0.005,
+    "left_gain": 1.0,
+    "right_gain": 1.0
+  },
+  "control": {
+    "navigation_rate_hz": 20.0,
+    "telemetry_rate_hz": 5.0
+  },
+  "drive_kind": "stepper",
+  "stepper": {
+    "common": {
+      "steps_per_revolution": 200,
+      "microsteps": 16,
+      "max_step_rate_hz": 20000,
+      "min_step_rate_hz": 2,
+      "max_step_accel_hz_per_s": 20000,
+      "comment": "NEMA 17 (200 full steps/rev) + A4988 at 1/16 microstepping = 3200 steps/rev. max_step_rate_hz must not exceed the firmware STEP timer base (pin_config kStepperTimerBaseHz = 20000)."
+    },
+    "left": {
+      "invert_direction": false
+    },
+    "right": {
+      "invert_direction": false
+    },
+    "enable_odometry": true,
+    "comment": "Stepper axes. drive_kind selects which actuator the firmware instantiates. invert_direction flips the DIR level if a motor is mounted mirrored. Set microsteps to match the A4988 MS1/MS2/MS3 wiring (1, 2, 4, 8 or 16)."
+  }
+}

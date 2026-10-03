@@ -1,0 +1,191 @@
+{
+  "map": {
+    "map_id": "SMART_MARKET_MAIN",
+    "map_version": 1,
+    "frame_id": "smart_market_map",
+    "width_m": 12.0,
+    "height_m": 8.0
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "x_m": 1.5,
+      "y_m": 2.0,
+      "type": "entry",
+      "name": "masuk"
+    },
+    {
+      "id": 2,
+      "x_m": 4.5,
+      "y_m": 2.0,
+      "type": "aisle",
+      "name": "lorong-a1"
+    },
+    {
+      "id": 3,
+      "x_m": 7.5,
+      "y_m": 2.0,
+      "type": "aisle",
+      "name": "lorong-a2"
+    },
+    {
+      "id": 4,
+      "x_m": 10.5,
+      "y_m": 2.0,
+      "type": "checkout",
+      "name": "kasir"
+    },
+    {
+      "id": 5,
+      "x_m": 1.5,
+      "y_m": 4.0,
+      "type": "intersection",
+      "name": "persimpangan-b1"
+    },
+    {
+      "id": 6,
+      "x_m": 4.5,
+      "y_m": 4.0,
+      "type": "intersection",
+      "name": "persimpangan-b2"
+    },
+    {
+      "id": 7,
+      "x_m": 7.5,
+      "y_m": 4.0,
+      "type": "intersection",
+      "name": "persimpangan-b3"
+    },
+    {
+      "id": 8,
+      "x_m": 10.5,
+      "y_m": 4.0,
+      "type": "intersection",
+      "name": "persimpangan-b4"
+    },
+    {
+      "id": 9,
+      "x_m": 1.5,
+      "y_m": 6.0,
+      "type": "aisle",
+      "name": "lorong-c1"
+    },
+    {
+      "id": 10,
+      "x_m": 4.5,
+      "y_m": 6.0,
+      "type": "destination",
+      "name": "produk-susu"
+    },
+    {
+      "id": 11,
+      "x_m": 7.5,
+      "y_m": 6.0,
+      "type": "destination",
+      "name": "produk-roti"
+    },
+    {
+      "id": 12,
+      "x_m": 10.5,
+      "y_m": 6.0,
+      "type": "parking",
+      "name": "parkir"
+    }
+  ],
+  "edges": [
+    {
+      "from": 1,
+      "to": 2,
+      "bidirectional": true
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "bidirectional": true
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "bidirectional": true
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "bidirectional": true
+    },
+    {
+      "from": 6,
+      "to": 7,
+      "bidirectional": true
+    },
+    {
+      "from": 7,
+      "to": 8,
+      "bidirectional": true
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "bidirectional": true
+    },
+    {
+      "from": 10,
+      "to": 11,
+      "bidirectional": true
+    },
+    {
+      "from": 11,
+      "to": 12,
+      "bidirectional": true
+    },
+    {
+      "from": 1,
+      "to": 5,
+      "bidirectional": true
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "bidirectional": true
+    },
+    {
+      "from": 3,
+      "to": 7,
+      "bidirectional": true
+    },
+    {
+      "from": 4,
+      "to": 8,
+      "bidirectional": true
+    },
+    {
+      "from": 5,
+      "to": 9,
+      "bidirectional": true
+    },
+    {
+      "from": 6,
+      "to": 10,
+      "bidirectional": true
+    },
+    {
+      "from": 7,
+      "to": 11,
+      "bidirectional": true
+    },
+    {
+      "from": 8,
+      "to": 12,
+      "bidirectional": true
+    }
+  ],
+  "notes": [
+    "Weights are auto-computed as the Euclidean distance when weight_m is omitted.",
+    "Horizontal edges are 3.0 m, vertical edges are 2.0 m.",
+    "The grid is deliberately uniform so the deterministic tie-break rule in dijkstra()",
+    "(equal distance => smaller predecessor node id) is observable in the tests.",
+    "Default development route: start (0.8, 0.9) snaps to node 1, destination node 11,",
+    "route 1 -> 2 -> 6 -> 7 -> 11 with a planned distance of 10.00 m.",
+    "Each node carries a unique \"name\" so a destination can be given by name (python simulator/main.py --destination produk-susu) instead of a numeric id. Names are resolved to ids in the simulator before the navigation core is called."
+  ]
+}

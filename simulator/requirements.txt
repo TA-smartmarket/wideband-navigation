@@ -1,0 +1,14 @@
+# Desktop simulator dependencies.
+#
+# The navigation algorithms are NOT implemented in Python: they are compiled from
+# navigation_core/ into a shared library and driven through ctypes (see
+# smart_trolley_sim/native_core.py).  A C++ compiler is therefore required in
+# addition to these packages.
+#
+#   python -m pip install -r simulator/requirements.txt
+
+pygame>=2.5.0
+numpy>=1.24.0
+
+# Optional: needed only by scripts/generate_mock_position.py for serial output.
+pyserial>=3.5

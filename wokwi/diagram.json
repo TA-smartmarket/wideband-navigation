@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "author": "Smart Trolley navigation project",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status",
+      "top": -60,
+      "left": 120,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -30,
+      "left": 60,
+      "attrs": { "resistance": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_left_fwd",
+      "top": 120,
+      "left": -120,
+      "attrs": { "color": "yellow" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_right_fwd",
+      "top": 120,
+      "left": 220,
+      "attrs": { "color": "yellow" }
+    }
+  ],
+  "connections": [
+    ["esp:2",  "led_status:A", "green", []],
+    ["led_status:C", "r1:1", "black", []],
+    ["r1:2", "esp:GND.1", "black", []],
+
+    ["esp:4",  "led_left_fwd:A", "orange", []],
+    ["led_left_fwd:C", "esp:GND.1", "black", []],
+
+    ["esp:7",  "led_right_fwd:A", "purple", []],
+    ["led_right_fwd:C", "esp:GND.1", "black", []]
+  ],
+  "dependencies": {}
+}
