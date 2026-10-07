@@ -73,6 +73,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--start-at", type=float, nargs=2, default=None,
                         metavar=("X_M", "Y_M"),
                         help="start position as map coordinates (overrides the scenario)")
+    parser.add_argument("--scene", type=str, default=None,
+                        help="saved GET /api/v1/scene response for obstacle-aware planning")
+    parser.add_argument("--obstacle-clearance", type=float, default=None, metavar="METERS",
+                        help="inflate each scene obstacle by this safety clearance")
     return parser.parse_args(argv)
 
 
@@ -148,6 +152,10 @@ def print_scenarios() -> None:
 
 def run_headless(args: argparse.Namespace) -> int:
     config = load_simulator_config()
+    if args.scene is not None:
+        config.scene_path = args.scene
+    if args.obstacle_clearance is not None:
+        config.obstacle_clearance_m = args.obstacle_clearance
     if args.seed is not None:
         config.simulation.random_seed = args.seed
     if args.no_log:
@@ -225,6 +233,10 @@ def run_interactive(args: argparse.Namespace) -> int:
     from smart_trolley_sim.renderer import Renderer
 
     config = load_simulator_config()
+    if args.scene is not None:
+        config.scene_path = args.scene
+    if args.obstacle_clearance is not None:
+        config.obstacle_clearance_m = args.obstacle_clearance
     if args.seed is not None:
         config.simulation.random_seed = args.seed
     if args.speed is not None:

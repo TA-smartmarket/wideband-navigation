@@ -256,13 +256,18 @@ def load_library(auto_build: bool = True, verbose: bool = False) -> ctypes.CDLL:
 class NavigationCore:
     """Thin, typed wrapper around one native navigation session."""
 
-    def __init__(self, graph_json: str, config_json: str | None = None, library: ctypes.CDLL | None = None):
+    def __init__(self, graph_json: str, config_json: str | None = None,
+                 library: ctypes.CDLL | None = None, scene_json: str | None = None,
+                 obstacle_clearance_m: float = 0.0):
         self._handle = None  # set before any operation that may raise
         self._lib = library if library is not None else load_library()
         self._declare_signatures()
         graph_text = graph_json.encode("utf-8")
         config_text = config_json.encode("utf-8") if config_json else None
-        self._handle = self._lib.nav_create(graph_text, config_text)
+        scene_text = scene_json.encode("utf-8") if scene_json is not None else None
+        self._handle = self._lib.nav_create_with_scene(
+            graph_text, config_text, scene_text, float(obstacle_clearance_m)
+        )
         if not self._handle:
             message = self._lib.nav_last_error()
             raise RuntimeError(
@@ -273,6 +278,10 @@ class NavigationCore:
         lib = self._lib
         lib.nav_create.restype = ctypes.c_void_p
         lib.nav_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+        lib.nav_create_with_scene.restype = ctypes.c_void_p
+        lib.nav_create_with_scene.argtypes = [
+            ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_double,
+        ]
         lib.nav_destroy.restype = None
         lib.nav_destroy.argtypes = [ctypes.c_void_p]
         lib.nav_last_error.restype = ctypes.c_char_p
@@ -294,6 +303,8 @@ class NavigationCore:
         lib.nav_request_replan.argtypes = [ctypes.c_void_p]
         lib.nav_reset.restype = None
         lib.nav_reset.argtypes = [ctypes.c_void_p]
+        lib.nav_apply_scene.restype = ctypes.c_int
+        lib.nav_apply_scene.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_double]
 
         lib.nav_submit_position.restype = ctypes.c_int
         lib.nav_submit_position.argtypes = [
@@ -332,6 +343,12 @@ class NavigationCore:
             ctypes.c_int,
             ctypes.POINTER(ctypes.c_int),
             ctypes.c_int,
+            ctypes.POINTER(ctypes.c_double),
+        ]
+        lib.nav_plan_route_with_scene.restype = ctypes.c_int
+        lib.nav_plan_route_with_scene.argtypes = [
+            ctypes.c_char_p, ctypes.c_char_p, ctypes.c_double,
+            ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_int,
             ctypes.POINTER(ctypes.c_double),
         ]
         lib.nav_find_nearest_node.restype = ctypes.c_int
@@ -385,6 +402,16 @@ class NavigationCore:
 
     def reset(self) -> None:
         self._lib.nav_reset(self._handle)
+
+    def apply_scene(self, scene_json: str, obstacle_clearance_m: float = 0.0) -> int:
+        """Replace static obstacles; returns blocked edges and resets navigation."""
+        blocked = int(self._lib.nav_apply_scene(
+            self._handle, scene_json.encode("utf-8"), float(obstacle_clearance_m)
+        ))
+        if blocked < 0:
+            message = self._lib.nav_last_error()
+            raise RuntimeError(message.decode("utf-8", "replace") if message else "invalid scene")
+        return blocked
 
     # -- inputs ------------------------------------------------------------
     def submit_position(self, x_m: float, y_m: float, quality: float, timestamp_ms: int,
@@ -468,6 +495,20 @@ class NavigationCore:
         count = self._lib.nav_plan_route(
             graph_json.encode("utf-8"), int(start_node), int(destination_node), nodes,
             NAV_MAX_ROUTE_NODES, ctypes.byref(distance),
+        )
+        if count <= 0:
+            return None, 0.0
+        return [int(nodes[i]) for i in range(count)], float(distance.value)
+
+    def plan_route_with_scene(self, graph_json: str, scene_json: str, clearance_m: float,
+                              start_node: int, destination_node: int):
+        """Plan on graph edges that do not intersect the static scene obstacles."""
+        nodes = (ctypes.c_int * NAV_MAX_ROUTE_NODES)()
+        distance = ctypes.c_double(0.0)
+        count = self._lib.nav_plan_route_with_scene(
+            graph_json.encode("utf-8"), scene_json.encode("utf-8"), float(clearance_m),
+            int(start_node), int(destination_node), nodes, NAV_MAX_ROUTE_NODES,
+            ctypes.byref(distance),
         )
         if count <= 0:
             return None, 0.0

@@ -157,6 +157,68 @@ simulator). When the backend exists, these are the interfaces.
 `weight_m` is optional (Euclidean distance when omitted). `map_version` must match
 `/map`; the loader rejects a mismatch.
 
+### `GET /api/v1/scene` (static obstacles)
+
+Navigation loads this response once at startup and again only when the map/scene
+changes. It does not poll static obstacles with every position sample.
+
+```json
+{
+  "scene": {
+    "room": { "width": 5, "depth": 4, "height": 2.7 },
+    "obstacles": [
+      {
+        "id": "obstacle-1", "label": "Wall",
+        "x": 1.5, "y": 1.5, "z": 1.35,
+        "sx": 3.0, "sy": 0.2, "sz": 2.7, "rot": 0.0
+      }
+    ]
+  }
+}
+```
+
+| Field | Navigation meaning |
+|---|---|
+| `x`, `y` | obstacle centre in `smart_market_map`, metres |
+| `sx`, `sy` | full width/depth, metres (not half-extents) |
+| `rot` | radians, counter-clockwise from `+X`; optional, defaults to `0` |
+| `z`, `sz`, `atten`, `label`, `id` | accepted but unused by 2D planning |
+
+`scene.room.width/depth` must match navigation's configured map dimensions. All
+geometry values must be finite and `sx/sy` must be positive. Malformed or
+mismatched scene data is rejected as a whole; navigation never silently plans
+with a partial obstacle set.
+
+Before Dijkstra runs, navigation inflates each rectangle by the configured
+clearance on every side and removes every graph edge that touches or crosses it.
+Dijkstra then chooses an existing alternate graph route. The graph must describe
+all usable aisles: filtering prevents an unsafe edge from being used, but does
+not invent new free-space waypoints around a rack.
+
+```python
+core = NavigationCore(
+    graph_json,
+    navigation_json,
+    scene_json=scene_response_text,
+    obstacle_clearance_m=0.20,
+)
+
+# On a later scene change; this safely stops and resets the session.
+blocked_edges = core.apply_scene(new_scene_response_text, 0.20)
+# Submit a fresh position and destination before resuming.
+```
+
+For local verification:
+
+```bat
+python simulator/main.py --headless --scene config/scene.example.json --obstacle-clearance 0.20
+```
+
+REST is the recommended transport for this static payload because the endpoint
+already exists and updates are infrequent. Periodic trolley positions keep using
+the existing `IPositionProvider` stream (UART today; MQTT/UDP can be added as a
+provider without changing planning).
+
 ### `GET /destination?trolley_id=TROLLEY_01`
 
 ```json
@@ -189,6 +251,11 @@ the ESP32-S3.
 them under `map`. The loader refuses a graph whose version differs from the map, so
 a stale map cannot be navigated silently. Bump `map_version` whenever node
 coordinates, ids or edges change.
+
+The current scene response has no version field. Until positioning adds one,
+reload it together with `/map`; a reload resets the active navigation session.
+Adding `map_version` and `frame_id` to the scene response is recommended so all
+three documents can be checked before motion is enabled.
 
 ## 6. Development without the real hardware
 

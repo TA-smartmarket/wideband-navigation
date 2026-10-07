@@ -79,7 +79,15 @@ class SimulationEngine:
         self.graph_json = self._prepare_graph()
         self.navigation_config_json = self._prepare_navigation_config()
 
-        self.core = NavigationCore(self.graph_json, self.navigation_config_json)
+        scene_json = None
+        if self.config.scene_path:
+            scene_path = self.config.resolve(self.config.scene_path)
+            scene_json = scene_path.read_text(encoding="utf-8")
+        self.core = NavigationCore(
+            self.graph_json, self.navigation_config_json,
+            scene_json=scene_json,
+            obstacle_clearance_m=self.config.obstacle_clearance_m,
+        )
 
         # Optional stepper drivetrain: the plant then drives its wheels through the
         # same STEP-rate conversion the A4988 firmware uses.

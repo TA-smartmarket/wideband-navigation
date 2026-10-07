@@ -4,6 +4,7 @@
 // callers; it contains no navigation logic of its own.
 #include "navigation/c_api.h"
 
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <new>
@@ -11,6 +12,7 @@
 #include "navigation/config_loader.hpp"
 #include "navigation/dijkstra.hpp"
 #include "navigation/navigation_fsm.hpp"
+#include "navigation/obstacle.hpp"
 #include "navigation/stepper.hpp"
 #include "navigation/telemetry.hpp"
 #include "navigation/time_utils.hpp"
@@ -19,6 +21,7 @@ namespace {
 
 /// Session owned by one nav_handle.
 struct NavSession {
+    nav::Graph base_graph;
     nav::Graph graph;
     nav::NavigationConfig config;
     nav::NavigationFsm fsm;
@@ -43,11 +46,42 @@ bool parseGraph(const char* graph_json, nav::Graph& graph, char* error, std::siz
     return nav::loadGraph(graph_json, graph, error, error_size);
 }
 
+bool applyScene(const nav::Graph& base_graph, const char* scene_json, double clearance_m,
+                float expected_width_m, float expected_depth_m, nav::Graph& graph,
+                int& blocked_edges, char* error, std::size_t error_size) {
+    if (scene_json == nullptr) {
+        graph = base_graph;
+        blocked_edges = 0;
+        return true;
+    }
+    nav::SceneObstacles obstacles;
+    if (!nav::loadSceneObstacles(scene_json, obstacles, error, error_size)) return false;
+    if ((expected_width_m > 0.0f &&
+         std::fabs(obstacles.room_width_m - expected_width_m) > 1.0e-3f) ||
+        (expected_depth_m > 0.0f &&
+         std::fabs(obstacles.room_depth_m - expected_depth_m) > 1.0e-3f)) {
+        std::snprintf(error, error_size, "scene: room dimensions do not match navigation map");
+        return false;
+    }
+    blocked_edges = nav::filterGraphByObstacles(
+        base_graph, obstacles, static_cast<float>(clearance_m), graph);
+    if (blocked_edges < 0) {
+        std::snprintf(error, error_size, "scene: clearance must be finite and >= 0");
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 extern "C" {
 
 nav_handle nav_create(const char* graph_json, const char* config_json) {
+    return nav_create_with_scene(graph_json, config_json, nullptr, 0.0);
+}
+
+nav_handle nav_create_with_scene(const char* graph_json, const char* config_json,
+                                 const char* scene_json, double obstacle_clearance_m) {
     setLastError("");
     auto* session = new (std::nothrow) NavSession();
     if (session == nullptr) {
@@ -56,12 +90,11 @@ nav_handle nav_create(const char* graph_json, const char* config_json) {
     }
 
     char error[NAV_MAX_ERROR_LEN] = {};
-    if (!parseGraph(graph_json, session->graph, error, sizeof(error))) {
+    if (!parseGraph(graph_json, session->base_graph, error, sizeof(error))) {
         setLastError(error);
         delete session;
         return nullptr;
     }
-
     nav::NavigationConfig config;
     if (config_json != nullptr && config_json[0] != '\0') {
         if (!nav::loadNavigationConfig(config_json, config, error, sizeof(error))) {
@@ -71,6 +104,15 @@ nav_handle nav_create(const char* graph_json, const char* config_json) {
         }
     }
     session->config = config;
+
+    int blocked_edges = 0;
+    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m,
+                    config.map_width_m, config.map_height_m, session->graph,
+                    blocked_edges, error, sizeof(error))) {
+        setLastError(error);
+        delete session;
+        return nullptr;
+    }
 
     const nav::ConfigValidation validation = session->fsm.begin(&session->graph, config);
     if (!validation.valid) {
@@ -143,6 +185,32 @@ void nav_reset(nav_handle handle) {
         session->has_accepted = false;
         session->last_accepted_ms = 0;
     }
+}
+
+int nav_apply_scene(nav_handle handle, const char* scene_json, double obstacle_clearance_m) {
+    NavSession* session = asSession(handle);
+    if (session == nullptr || scene_json == nullptr) {
+        setLastError("scene JSON and session are required");
+        return -1;
+    }
+    nav::Graph filtered;
+    int blocked_edges = 0;
+    char error[NAV_MAX_ERROR_LEN] = {};
+    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m,
+                    session->config.map_width_m, session->config.map_height_m,
+                    filtered, blocked_edges, error, sizeof(error))) {
+        setLastError(error);
+        return -1;
+    }
+    session->graph = filtered;
+    // Clear both the active and emergency-stop-held destination before rebinding
+    // the graph. A route from the previous scene must never resume implicitly.
+    session->fsm.cancelNavigation();
+    session->fsm.begin(&session->graph, session->config);
+    session->has_accepted = false;
+    session->last_accepted_ms = 0;
+    setLastError("");
+    return blocked_edges;
 }
 
 int nav_submit_position(nav_handle handle, double x_m, double y_m, double quality,
@@ -256,9 +324,25 @@ int nav_get_status_text(nav_handle handle, const char* trolley_id, char* out, in
 
 int nav_plan_route(const char* graph_json, int start_node, int destination_node, int* out_nodes,
                    int max_nodes, double* out_distance_m) {
+    return nav_plan_route_with_scene(graph_json, nullptr, 0.0, start_node, destination_node,
+                                     out_nodes, max_nodes, out_distance_m);
+}
+
+int nav_plan_route_with_scene(const char* graph_json, const char* scene_json,
+                              double obstacle_clearance_m, int start_node,
+                              int destination_node, int* out_nodes, int max_nodes,
+                              double* out_distance_m) {
+    setLastError("");
+    nav::Graph base_graph;
     nav::Graph graph;
     char error[NAV_MAX_ERROR_LEN] = {};
-    if (!parseGraph(graph_json, graph, error, sizeof(error))) {
+    if (!parseGraph(graph_json, base_graph, error, sizeof(error))) {
+        setLastError(error);
+        return 0;
+    }
+    int blocked_edges = 0;
+    if (!applyScene(base_graph, scene_json, obstacle_clearance_m, 0.0f, 0.0f, graph,
+                    blocked_edges, error, sizeof(error))) {
         setLastError(error);
         return 0;
     }

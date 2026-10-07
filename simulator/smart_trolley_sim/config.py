@@ -182,6 +182,8 @@ class SimulatorConfig:
     map_path: str = "config/map.json"
     graph_path: str = "config/graph.json"
     navigation_config_path: str = "config/navigation.json"
+    scene_path: str | None = None
+    obstacle_clearance_m: float = 0.20
 
     def resolve(self, relative: str) -> Path:
         """Resolve a repository-relative path from the config file."""
@@ -236,5 +238,9 @@ def load_simulator_config(path: str | Path | None = None) -> SimulatorConfig:
         graph_path=str(document.get("graph_path", SimulatorConfig().graph_path)),
         navigation_config_path=str(
             document.get("navigation_config_path", SimulatorConfig().navigation_config_path)
+        ),
+        scene_path=(str(document["scene_path"]) if document.get("scene_path") else None),
+        obstacle_clearance_m=float(
+            document.get("obstacle_clearance_m", SimulatorConfig().obstacle_clearance_m)
         ),
     )

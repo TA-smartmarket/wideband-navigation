@@ -270,6 +270,9 @@ def validate_simulator(document: dict) -> dict:
     _require(0.0 <= noise <= 2.0, "simulator.json: uwb.noise_std_m must be in [0, 2]")
     dropout = float(uwb.get("dropout_probability", 0.0))
     _require(0.0 <= dropout <= 1.0, "simulator.json: uwb.dropout_probability must be in [0, 1]")
+    clearance = float(document.get("obstacle_clearance_m", 0.2))
+    _require(clearance >= 0.0,
+             "simulator.json: obstacle_clearance_m must be >= 0")
     return {"dt_s": dt, "update_rate_hz": rate}
 
 

@@ -38,6 +38,11 @@ typedef void* nav_handle;
 /// config/navigation.json (NULL means "use defaults").
 NAV_API nav_handle nav_create(const char* graph_json, const char* config_json);
 
+/// Create a session and apply a GET /api/v1/scene response before planning.
+/// `obstacle_clearance_m` inflates every obstacle for the trolley footprint.
+NAV_API nav_handle nav_create_with_scene(const char* graph_json, const char* config_json,
+                                         const char* scene_json, double obstacle_clearance_m);
+
 /// Destroy a session created by nav_create().
 NAV_API void nav_destroy(nav_handle handle);
 
@@ -71,6 +76,12 @@ NAV_API void nav_request_replan(nav_handle handle);
 
 /// Reset all runtime state (keeps the graph and configuration).
 NAV_API void nav_reset(nav_handle handle);
+
+/// Replace the static scene used by this session. Planning is stopped and all
+/// runtime position/destination state is reset, so callers must submit a fresh
+/// position and destination afterwards. Returns blocked-edge count, or -1.
+NAV_API int nav_apply_scene(nav_handle handle, const char* scene_json,
+                            double obstacle_clearance_m);
 
 // ---------------------------------------------------------------------------
 // Inputs
@@ -208,6 +219,12 @@ NAV_API double nav_stepper_rpm_to_rate(double rpm, int steps_per_revolution, int
 /// failure).  `out_distance_m` receives the total distance.
 NAV_API int nav_plan_route(const char* graph_json, int start_node, int destination_node,
                            int* out_nodes, int max_nodes, double* out_distance_m);
+
+/// Obstacle-aware form of nav_plan_route using a positioning scene response.
+NAV_API int nav_plan_route_with_scene(const char* graph_json, const char* scene_json,
+                                      double obstacle_clearance_m, int start_node,
+                                      int destination_node, int* out_nodes, int max_nodes,
+                                      double* out_distance_m);
 
 /// Nearest graph node to (x_m, y_m).  Returns the node id or -1.
 NAV_API int nav_find_nearest_node(const char* graph_json, double x_m, double y_m,

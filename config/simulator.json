@@ -55,6 +55,8 @@
   "map_path": "config/map.json",
   "graph_path": "config/graph.json",
   "navigation_config_path": "config/navigation.json",
+  "scene_path": null,
+  "obstacle_clearance_m": 0.2,
   "benchmarks": {
     "destination_error_m": {
       "pass": 0.2,

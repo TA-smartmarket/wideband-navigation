@@ -1,0 +1,21 @@
+{
+  "scene": {
+    "room": { "width": 12, "depth": 8, "height": 2.7 },
+    "anchors": [],
+    "obstacles": [
+      {
+        "id": "rack-demo",
+        "label": "Rack",
+        "x": 3.0,
+        "y": 2.0,
+        "z": 1.35,
+        "sx": 1.0,
+        "sy": 0.2,
+        "sz": 2.7,
+        "rot": 0.0,
+        "atten": 1.0
+      }
+    ]
+  },
+  "nlos_enabled": true
+}

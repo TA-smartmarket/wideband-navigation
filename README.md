@@ -20,17 +20,19 @@ destination node inside a Smart Market:
 
 1. receive the current position from the UWB positioning subsystem,
 2. snap it onto the navigation graph,
-3. compute the shortest route with Dijkstra,
-4. convert the route into waypoints,
-5. estimate heading from successive positions,
-6. generate linear/angular velocity commands,
-7. convert them into left/right wheel commands,
-8. drive the motors through a PID heading controller,
-9. detect waypoint arrival and advance automatically,
-10. detect route deviation and replan,
-11. detect invalid or lost positioning and stop safely,
-12. detect destination arrival and stop,
-13. publish telemetry for external modules.
+3. load static obstacles from the positioning scene,
+4. exclude graph edges that intersect those obstacles,
+5. compute the shortest safe route with Dijkstra,
+6. convert that route into waypoints,
+7. estimate heading from successive positions,
+8. generate linear/angular velocity commands,
+9. convert them into left/right wheel commands,
+10. drive the motors through a PID heading controller,
+11. detect waypoint arrival and advance automatically,
+12. detect route deviation and replan,
+13. detect invalid or lost positioning and stop safely,
+14. detect destination arrival and stop,
+15. publish telemetry for external modules.
 
 ## 2. Architecture
 
@@ -44,7 +46,7 @@ flowchart LR
     WHEELS[Trolley Motors]
 
     UI --> SERVER
-    SERVER -->|destination / map| ESP
+    SERVER -->|destination / map / static scene| ESP
     UWB -->|x, y, quality, valid| ESP
     ESP -->|left / right command| MOTOR
     MOTOR --> WHEELS

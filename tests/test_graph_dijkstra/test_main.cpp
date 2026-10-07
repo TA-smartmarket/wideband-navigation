@@ -14,6 +14,7 @@
 #include "navigation/dijkstra.hpp"
 #include "navigation/geometry.hpp"
 #include "navigation/graph.hpp"
+#include "navigation/obstacle.hpp"
 
 using namespace nav;
 
@@ -218,6 +219,58 @@ static void test_polyline_length_and_cross_track() {
     TEST_ASSERT_EQUAL_FLOAT(1.0f, distanceToSegment(Position2D{3.0f, 0.0f}, waypoints, 3, 0));
 }
 
+static void test_scene_obstacle_blocks_edge_and_dijkstra_uses_detour() {
+    Graph source;
+    source.addNode(1, 0.0f, 0.0f);
+    source.addNode(2, 2.0f, 0.0f);
+    source.addNode(3, 2.0f, 2.0f);
+    source.addNode(4, 0.0f, 2.0f);
+    source.addEdge(1, 2);
+    source.addEdge(2, 3);
+    source.addEdge(1, 4);
+    source.addEdge(4, 3);
+
+    const char* scene_json = R"JSON({
+      "scene": {"room":{"width":2,"depth":2,"height":2.7},"obstacles":[
+        {"id":"rack","x":1.0,"y":0.0,"sx":0.4,"sy":0.4,"rot":0.0}
+      ]}}
+    )JSON";
+    SceneObstacles obstacles;
+    char error[160] = {};
+    TEST_ASSERT_TRUE(loadSceneObstacles(scene_json, obstacles, error, sizeof(error)));
+    TEST_ASSERT_EQUAL_INT(1, obstacles.count);
+
+    Graph filtered;
+    TEST_ASSERT_EQUAL_INT(1, filterGraphByObstacles(source, obstacles, 0.1f, filtered));
+    TEST_ASSERT_EQUAL_INT(3, filtered.edgeCount());
+    const PathResult route = dijkstra(filtered, 1, 3);
+    TEST_ASSERT_TRUE(route.success);
+    TEST_ASSERT_EQUAL_INT(3, route.node_count);
+    TEST_ASSERT_EQUAL_INT(1, route.node_ids[0]);
+    TEST_ASSERT_EQUAL_INT(4, route.node_ids[1]);
+    TEST_ASSERT_EQUAL_INT(3, route.node_ids[2]);
+}
+
+static void test_rotated_obstacle_and_invalid_scene_are_handled() {
+    Graph source;
+    source.addNode(1, 0.0f, 1.0f);
+    source.addNode(2, 2.0f, 1.0f);
+    source.addEdge(1, 2);
+    const char* rotated = R"JSON({"scene":{"room":{"width":2,"depth":2},"obstacles":[
+      {"x":1,"y":1,"sx":0.2,"sy":1.0,"rot":0.785398163}
+    ]}})JSON";
+    SceneObstacles obstacles;
+    Graph filtered;
+    char error[160] = {};
+    TEST_ASSERT_TRUE(loadSceneObstacles(rotated, obstacles, error, sizeof(error)));
+    TEST_ASSERT_EQUAL_INT(1, filterGraphByObstacles(source, obstacles, 0.0f, filtered));
+    TEST_ASSERT_EQUAL_INT(0, filtered.edgeCount());
+
+    TEST_ASSERT_FALSE(loadSceneObstacles(
+        R"JSON({"scene":{"room":{"width":2,"depth":2},"obstacles":[{"x":1,"y":1,"sx":0,"sy":1}]}})JSON",
+        obstacles, error, sizeof(error)));
+}
+
 int main(int, char**) {
     UNITY_BEGIN();
     RUN_TEST(test_graph_node_and_edge_creation);
@@ -235,5 +288,7 @@ int main(int, char**) {
     RUN_TEST(test_nearest_node_and_snap_limit);
     RUN_TEST(test_reachability_query);
     RUN_TEST(test_polyline_length_and_cross_track);
+    RUN_TEST(test_scene_obstacle_blocks_edge_and_dijkstra_uses_detour);
+    RUN_TEST(test_rotated_obstacle_and_invalid_scene_are_handled);
     return UNITY_END();
 }
