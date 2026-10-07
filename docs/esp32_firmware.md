@@ -245,13 +245,20 @@ public:
 |---|---|---|
 | `nav::SerialPositionProvider` | console UART, JSON lines | `NAVIGATION_USE_MOCK_POSITION=1` (default) |
 | `firmware::RealPositionProvider` | UART1 (GPIO 43/44), same JSON lines | `NAVIGATION_USE_MOCK_POSITION=0` |
+| `firmware::HttpPositionProvider` | HTTP pull `GET /api/v1/navigation/position` | `NAVIGATION_POSITION_TRANSPORT=1` |
+| `firmware::MqttPositionProvider` | MQTT subscribe `<base>/navigation/position` | `NAVIGATION_POSITION_TRANSPORT=2` |
 | `nav::MockPositionProvider` | in-memory | tests |
 | `nav::ReplayPositionProvider` | recorded sequence | tests |
 
 `RealPositionProvider` reuses the same parser as the mock provider, so switching
-to the real UWB subsystem changes only the transport. Adding UDP, MQTT, ESP-NOW
-or WebSocket later means adding one `IPositionProvider` implementation; nothing
-else changes.
+to the real UWB subsystem changes only the transport.  The HTTP and MQTT
+providers share `nav::RemotePositionProvider`, which feeds one complete JSON
+document into the same `measurementFromJson` parser; `NAVIGATION_POSITION_TRANSPORT`
+(1 = HTTP pull, 2 = MQTT subscribe) selects the transport and takes precedence
+over `NAVIGATION_USE_MOCK_POSITION`.  The matching network settings live in
+`app_config.hpp`: `NAVIGATION_SERVER_URL`, `NAVIGATION_WIFI_SSID`,
+`NAVIGATION_WIFI_PASSWORD`, `NAVIGATION_MQTT_HOST`, `NAVIGATION_MQTT_PORT`,
+`NAVIGATION_MQTT_TOPIC`.
 
 ## 8. Console commands
 
