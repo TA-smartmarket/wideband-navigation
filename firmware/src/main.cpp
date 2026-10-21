@@ -23,6 +23,7 @@
 #include "navigation/config_loader.hpp"
 #include "navigation/logging.hpp"
 #include "navigation/time_utils.hpp"
+#include "network_position_provider.hpp"
 #include "pin_config.hpp"
 #include "position_provider.hpp"
 #include "stepper_driver.hpp"
@@ -59,7 +60,19 @@ void taskPosition(void*) {
     ArduinoStreamAdapter console_stream(Serial);
     nav::SerialPositionProvider serial_provider(&console_stream, TROLLEY_ID);
 
-#if NAVIGATION_USE_MOCK_POSITION
+#if NAVIGATION_POSITION_TRANSPORT == 1
+    // HTTP pull from the positioning server (GET /api/v1/navigation/position).
+    static firmware::HttpPositionProvider http_provider(NAVIGATION_SERVER_URL, TROLLEY_ID);
+    nav::IPositionProvider& provider = http_provider;
+    NAV_LOG_INFO("POS", "position source: %s @ %s", provider.name(), NAVIGATION_SERVER_URL);
+#elif NAVIGATION_POSITION_TRANSPORT == 2
+    // MQTT push from the positioning server (topic <base>/navigation/position).
+    static firmware::MqttPositionProvider mqtt_provider(
+        NAVIGATION_MQTT_HOST, NAVIGATION_MQTT_PORT, NAVIGATION_MQTT_TOPIC, TROLLEY_ID);
+    nav::IPositionProvider& provider = mqtt_provider;
+    NAV_LOG_INFO("POS", "position source: %s @ %s:%u topic '%s'",
+                 provider.name(), NAVIGATION_MQTT_HOST, NAVIGATION_MQTT_PORT, NAVIGATION_MQTT_TOPIC);
+#elif NAVIGATION_USE_MOCK_POSITION
     // Development mode: mock UWB JSON lines arrive on the console UART.
     nav::IPositionProvider& provider = serial_provider;
     NAV_LOG_INFO("POS", "position source: %s (mock/development mode)", provider.name());

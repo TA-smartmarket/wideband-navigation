@@ -103,10 +103,17 @@ backwards compatible: the field is ignored until the core is updated to use it.
 |---|---|---|
 | USB serial (console UART) | **implemented** (development default) | `nav::SerialPositionProvider` |
 | UART1 (dedicated link) | **implemented**, needs pin confirmation | `firmware::RealPositionProvider` |
+| HTTP pull | **implemented** (`NAVIGATION_POSITION_TRANSPORT 1`) | `firmware::HttpPositionProvider` |
+| MQTT subscribe | **implemented** (`NAVIGATION_POSITION_TRANSPORT 2`) | `firmware::MqttPositionProvider` |
 | UDP / Wi-Fi | interface ready, not implemented | add one `IPositionProvider` |
-| MQTT | interface ready, not implemented | add one `IPositionProvider` |
 | ESP-NOW | interface ready, not implemented | add one `IPositionProvider` |
 | WebSocket | interface ready, not implemented | add one `IPositionProvider` |
+
+HTTP and MQTT deliver one complete JSON document per response/payload (no
+trailing newline), so they share `nav::RemotePositionProvider`, which feeds a
+whole document into the same `measurementFromJson` parser used by the UART
+providers.  Only the transport glue differs; parsing, validation, planning and
+control are unchanged.
 
 Adding a transport means implementing one class:
 
@@ -125,6 +132,19 @@ The JSON parsing, validation, planning, following and control are unchanged.
 Development works entirely without a server (local configuration files plus the
 simulator). When the backend exists, these are the interfaces.
 
+The wideband-positioning server now exposes the navigation-facing endpoints
+directly (single JSON object, no envelope):
+
+* `GET /api/v1/navigation/map` — map metadata (dimensions from the scene).
+* `GET /api/v1/navigation/scene` — static obstacles (`rot` already in radians).
+* `GET /api/v1/navigation/position` — current position (REST pull fallback).
+* MQTT topic `<base>/navigation/position` — position pushed at 10 Hz (primary,
+  lowest latency).
+
+The simulator consumes these with `--position-source http|mqtt` and
+`--map-from-server` / `--scene-from-server`.  The firmware does the same via
+`NAVIGATION_POSITION_TRANSPORT`.
+
 ### `GET /map`
 
 ```json
@@ -132,12 +152,17 @@ simulator). When the backend exists, these are the interfaces.
   "map_id": "SMART_MARKET_MAIN",
   "map_version": 1,
   "frame_id": "smart_market_map",
-  "width_m": 12.0,
-  "height_m": 8.0,
+  "width_m": 3.9,
+  "height_m": 2.5,
   "origin_x_m": 0.0,
   "origin_y_m": 0.0
 }
 ```
+
+> The width/height now reflect the real positioning room (3.9 × 2.5 m) rather
+> than the historical 12 × 8 m placeholder.  Navigation must source these
+> dimensions from the positioning server (`/api/v1/navigation/map`) instead of
+> hardcoding them, so the map rectangle always matches the scene obstacle room.
 
 ### `GET /graph`
 
@@ -271,7 +296,12 @@ three documents can be checked before motion is enabled.
    field names, timestamp semantics).
 2. Point the real provider at the correct UART and baud
    (`pin_config.hpp`: `kUwbUartRxPin`, `kUwbUartTxPin`, `kUwbUartBaud`).
-3. Set `NAVIGATION_USE_MOCK_POSITION 0` in `firmware/include/app_config.hpp`.
+   For network transports set `NAVIGATION_POSITION_TRANSPORT` (1 = HTTP pull,
+   2 = MQTT subscribe) and the matching `NAVIGATION_SERVER_URL` /
+   `NAVIGATION_MQTT_HOST` / `NAVIGATION_WIFI_SSID` in `app_config.hpp`.
+3. Set `NAVIGATION_USE_MOCK_POSITION 0` in `firmware/include/app_config.hpp`
+   (serial/UART mode).  `NAVIGATION_POSITION_TRANSPORT` takes precedence when
+   non-zero.
 4. Verify with `python scripts/generate_mock_position.py` that the firmware
    parses the contract *before* connecting the real sensor.
 5. Then connect the real subsystem and confirm telemetry shows

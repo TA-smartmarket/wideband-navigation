@@ -77,6 +77,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help="saved GET /api/v1/scene response for obstacle-aware planning")
     parser.add_argument("--obstacle-clearance", type=float, default=None, metavar="METERS",
                         help="inflate each scene obstacle by this safety clearance")
+    parser.add_argument("--position-source", type=str, default="sim", metavar="sim|http|mqtt",
+                        help="position source: built-in UWB model (sim, default), "
+                             "HTTP pull, or MQTT push from the positioning server")
+    parser.add_argument("--server-url", type=str, default="http://127.0.0.1:8080",
+                        help="positioning server base URL (for http/mqtt position source "
+                             "and --map-from-server)")
+    parser.add_argument("--mqtt-host", type=str, default="127.0.0.1",
+                        help="MQTT broker host for --position-source mqtt")
+    parser.add_argument("--mqtt-port", type=int, default=1883,
+                        help="MQTT broker port")
+    parser.add_argument("--mqtt-topic", type=str, default="uwb/home/navigation/position",
+                        help="MQTT topic carrying the navigation position contract")
+    parser.add_argument("--map-from-server", action="store_true",
+                        help="source the map dimensions from GET /api/v1/navigation/map")
+    parser.add_argument("--scene-from-server", action="store_true",
+                        help="source the static obstacle scene from GET /api/v1/navigation/scene")
     return parser.parse_args(argv)
 
 
@@ -150,6 +166,46 @@ def print_scenarios() -> None:
     print("\nRun:  python simulator/main.py --scenario 3")
 
 
+def build_position_source(args):
+    """Return a remote position source (or None for the built-in UWB model)."""
+    from smart_trolley_sim.position_source import HttpPositionSource, MqttPositionSource
+
+    kind = (args.position_source or "sim").lower()
+    if kind == "sim":
+        return None
+    if kind == "http":
+        return HttpPositionSource(args.server_url)
+    if kind == "mqtt":
+        return MqttPositionSource(args.mqtt_host, args.mqtt_port, args.mqtt_topic)
+    print(f"error: unknown --position-source '{kind}'", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def fetch_map_dims(args):
+    """Return (width_m, height_m) from the positioning server, or None."""
+    if not args.map_from_server:
+        return None
+    from smart_trolley_sim.position_source import fetch_map_from_server
+
+    document = fetch_map_from_server(args.server_url)
+    width_m = float(document["width_m"])
+    height_m = float(document["height_m"])
+    print(f"map dims from server: {width_m:.2f} x {height_m:.2f} m")
+    return (width_m, height_m)
+
+
+def fetch_scene_json(args):
+    """Return the server scene JSON string (rot in radians), or None."""
+    if not args.scene_from_server:
+        return None
+    from smart_trolley_sim.position_source import fetch_scene_from_server
+
+    document = fetch_scene_from_server(args.server_url)
+    obstacles = document.get("scene", {}).get("obstacles", [])
+    print(f"scene from server: {len(obstacles)} obstacle(s)")
+    return json.dumps(document)
+
+
 def run_headless(args: argparse.Namespace) -> int:
     config = load_simulator_config()
     if args.scene is not None:
@@ -169,51 +225,61 @@ def run_headless(args: argparse.Namespace) -> int:
 
     results = []
     failures = 0
-    for scenario in scenarios:
-        engine = SimulationEngine(scenario, config)
-        try:
-            if not args.all:
-                # Overrides are for a single targeted run; a full sweep keeps each
-                # scenario's own start and destination.
-                if not apply_destination_overrides(engine, args):
-                    return 2
-            metrics = engine.run_to_completion()
-        finally:
-            engine.close()
-        results.append({
-            "scenario": scenario.name,
-            "description": scenario.description,
-            "expectation": scenario.expectation,
-            "expected_success": scenario.expect_success,
-            **metrics.as_dict(),
-        })
-        if metrics.success:
-            status = "SUCCESS"
-        elif not metrics.completed:
-            status = "TIMEOUT"      # ran out of simulated time without arriving
-        else:
-            status = "FAILED"
-        efficiency = (f"{metrics.path_efficiency_percent:5.1f}%"
-                      if metrics.completed else "  n/a")
-        print(f"[{status:8s}] {scenario.name:38s} "
-              f"state={metrics.final_state:11s} "
-              f"time={metrics.completion_time_s:6.1f}s "
-              f"planned={metrics.planned_distance_m:6.2f}m "
-              f"travelled={metrics.ground_truth_distance_m:6.2f}m "
-              f"excess={metrics.excess_distance_m:+5.2f}m "
-              f"eff={efficiency} "
-              f"xte={metrics.mean_cross_track_error_m:5.2f}/{metrics.max_cross_track_error_m:5.2f}m "
-              f"dest_err={metrics.destination_error_m:5.2f}m "
-              f"replans={metrics.replan_count} "
-              f"losses={metrics.position_loss_events} "
-              f"[{metrics.benchmark_overall}]")
-        # A scenario marked expect_success=False is a deliberate failure drill;
-        # not arriving is the correct outcome for it.  A benchmark breach is
-        # reported but never counted as a failure: it is an experimental metric.
-        if scenario.expect_success and not metrics.success:
-            failures += 1
-        if not scenario.expect_success and metrics.final_state not in ("ERROR",):
-            failures += 1
+    position_source = build_position_source(args)
+    map_dims_override = fetch_map_dims(args)
+    scene_json_override = fetch_scene_json(args)
+    try:
+        for scenario in scenarios:
+            engine = SimulationEngine(scenario, config,
+                                      position_source=position_source,
+                                      map_dims_override=map_dims_override,
+                                      scene_json_override=scene_json_override)
+            try:
+                if not args.all:
+                    # Overrides are for a single targeted run; a full sweep keeps each
+                    # scenario's own start and destination.
+                    if not apply_destination_overrides(engine, args):
+                        return 2
+                metrics = engine.run_to_completion()
+            finally:
+                engine.close()
+            results.append({
+                "scenario": scenario.name,
+                "description": scenario.description,
+                "expectation": scenario.expectation,
+                "expected_success": scenario.expect_success,
+                **metrics.as_dict(),
+            })
+            if metrics.success:
+                status = "SUCCESS"
+            elif not metrics.completed:
+                status = "TIMEOUT"      # ran out of simulated time without arriving
+            else:
+                status = "FAILED"
+            efficiency = (f"{metrics.path_efficiency_percent:5.1f}%"
+                          if metrics.completed else "  n/a")
+            print(f"[{status:8s}] {scenario.name:38s} "
+                  f"state={metrics.final_state:11s} "
+                  f"time={metrics.completion_time_s:6.1f}s "
+                  f"planned={metrics.planned_distance_m:6.2f}m "
+                  f"travelled={metrics.ground_truth_distance_m:6.2f}m "
+                  f"excess={metrics.excess_distance_m:+5.2f}m "
+                  f"eff={efficiency} "
+                  f"xte={metrics.mean_cross_track_error_m:5.2f}/{metrics.max_cross_track_error_m:5.2f}m "
+                  f"dest_err={metrics.destination_error_m:5.2f}m "
+                  f"replans={metrics.replan_count} "
+                  f"losses={metrics.position_loss_events} "
+                  f"[{metrics.benchmark_overall}]")
+            # A scenario marked expect_success=False is a deliberate failure drill;
+            # not arriving is the correct outcome for it.  A benchmark breach is
+            # reported but never counted as a failure: it is an experimental metric.
+            if scenario.expect_success and not metrics.success:
+                failures += 1
+            if not scenario.expect_success and metrics.final_state not in ("ERROR",):
+                failures += 1
+    finally:
+        if position_source is not None and hasattr(position_source, "close"):
+            position_source.close()
 
     if args.json:
         target = Path(args.json)
@@ -245,7 +311,13 @@ def run_interactive(args: argparse.Namespace) -> int:
         config.logging.enabled = False
 
     scenario = scenario_by_index(args.scenario) or builtin_scenarios()[0]
-    engine = SimulationEngine(scenario, config)
+    position_source = build_position_source(args)
+    map_dims_override = fetch_map_dims(args)
+    scene_json_override = fetch_scene_json(args)
+    engine = SimulationEngine(scenario, config,
+                              position_source=position_source,
+                              map_dims_override=map_dims_override,
+                              scene_json_override=scene_json_override)
     if not apply_destination_overrides(engine, args):
         engine.close()
         return 2

@@ -33,6 +33,18 @@ from .uwb_simulator import UwbSimulator
 UNREACHABLE_NODE_ID = 99
 
 
+def _rebase_sample(sample: "UwbSample", now_ms: int) -> "UwbSample":
+    """Re-stamp a remote sample onto the local simulation clock.
+
+    The positioning server timestamps with its own monotonic clock; the
+    navigation core compares `timestamp_ms` against the local `now_ms` it is
+    handed, so a remote stamp would otherwise read as stale or from the future.
+    """
+    import dataclasses
+
+    return dataclasses.replace(sample, timestamp_ms=now_ms)
+
+
 @dataclass
 class SimulationState:
     """Observable state of one running simulation (consumed by the renderer)."""
@@ -62,10 +74,15 @@ class SimulationEngine:
                  scenario: Scenario,
                  config: SimulatorConfig | None = None,
                  market_map: MarketMap | None = None,
-                 run_index: int = 1):
+                 run_index: int = 1,
+                 position_source=None,
+                 map_dims_override: tuple[float, float] | None = None,
+                 scene_json_override: str | None = None):
         self.config = config or load_simulator_config()
         self.scenario = scenario
         self.run_index = run_index
+        self.position_source = position_source  # Optional[Http/MqttPositionSource]
+        self.map_dims_override = map_dims_override  # (width_m, height_m) from server
 
         self.market_map = market_map or load_market_map(
             self.config.map_path, self.config.graph_path
@@ -79,8 +96,8 @@ class SimulationEngine:
         self.graph_json = self._prepare_graph()
         self.navigation_config_json = self._prepare_navigation_config()
 
-        scene_json = None
-        if self.config.scene_path:
+        scene_json = scene_json_override
+        if scene_json is None and self.config.scene_path:
             scene_path = self.config.resolve(self.config.scene_path)
             scene_json = scene_path.read_text(encoding="utf-8")
         self.core = NavigationCore(
@@ -196,6 +213,12 @@ class SimulationEngine:
             target = document.setdefault(section, {})
             if isinstance(values, dict):
                 target.update(values)
+        # Server-sourced map dimensions: the positioning room is authoritative,
+        # so the navigation map rectangle and the scene obstacle room always agree.
+        if self.map_dims_override is not None:
+            width_m, height_m = self.map_dims_override
+            document.setdefault("map", {})["width_m"] = width_m
+            document["map"]["height_m"] = height_m
         return json.dumps(document)
 
     def _configure_from_scenario(self) -> None:
@@ -457,7 +480,17 @@ class SimulationEngine:
 
         # 1. Sensor model: only the measured position reaches navigation.
         now_ms = self._clock_offset_ms + int(round(self.state.sim_time_s * 1000.0))
-        sample = self.uwb.poll(self.plant.state.x_m, self.plant.state.y_m, now_ms)
+        if self.position_source is not None:
+            # Integration mode: positions come from the positioning server
+            # (HTTP pull or MQTT push) instead of the built-in UWB model.
+            sample = self.position_source.poll(now_ms)
+            # The remote timestamp is the server's monotonic clock; the core
+            # compares it against the local `now_ms`, so rebase onto the local
+            # simulation clock to keep staleness checks meaningful.
+            if sample is not None:
+                sample = _rebase_sample(sample, now_ms)
+        else:
+            sample = self.uwb.poll(self.plant.state.x_m, self.plant.state.y_m, now_ms)
         if sample is not None:
             self._last_sample = sample
             self._samples_submitted += 1

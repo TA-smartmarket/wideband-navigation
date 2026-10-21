@@ -20,6 +20,44 @@
 #define NAVIGATION_USE_MOCK_POSITION 1
 #endif
 
+/// Position transport selection (used when the real positioning server exists).
+/// Takes precedence over NAVIGATION_USE_MOCK_POSITION.
+///   0 = serial/UART (legacy NAVIGATION_USE_MOCK_POSITION behaviour)
+///   1 = HTTP pull from the positioning server (GET /api/v1/navigation/position)
+///   2 = MQTT subscribe to the positioning server push
+///       (topic `<base>/navigation/position`)
+#ifndef NAVIGATION_POSITION_TRANSPORT
+#define NAVIGATION_POSITION_TRANSPORT 0
+#endif
+
+// ---------------------------------------------------------------------------
+// Network settings (only used when NAVIGATION_POSITION_TRANSPORT is 1 or 2)
+// ---------------------------------------------------------------------------
+
+/// Positioning server base URL (no trailing slash).
+#ifndef NAVIGATION_SERVER_URL
+#define NAVIGATION_SERVER_URL "http://192.168.1.10:8080"
+#endif
+
+/// Wi-Fi credentials for the positioning network.
+#ifndef NAVIGATION_WIFI_SSID
+#define NAVIGATION_WIFI_SSID ""
+#endif
+#ifndef NAVIGATION_WIFI_PASSWORD
+#define NAVIGATION_WIFI_PASSWORD ""
+#endif
+
+/// MQTT broker (positioning server's broker) and topic.
+#ifndef NAVIGATION_MQTT_HOST
+#define NAVIGATION_MQTT_HOST "192.168.1.10"
+#endif
+#ifndef NAVIGATION_MQTT_PORT
+#define NAVIGATION_MQTT_PORT 1883
+#endif
+#ifndef NAVIGATION_MQTT_TOPIC
+#define NAVIGATION_MQTT_TOPIC "uwb/home/navigation/position"
+#endif
+
 /// Motor output mode.
 ///   0 = NullMotorDriver: no hardware, state machine still fully exercised
 ///   1 = H-bridge driver on LEDC PWM
