@@ -22,6 +22,17 @@ ConfigValidation validateConfig(const NavigationConfig& config) {
         result.fail("position.heading_min_displacement_m must be >= 0");
         return result;
     }
+    if (!isFinite(config.position.heading_correction_gain) ||
+        config.position.heading_correction_gain < 0.0f ||
+        config.position.heading_correction_gain > 1.0f) {
+        result.fail("position.heading_correction_gain must be within [0, 1]");
+        return result;
+    }
+    if (!isFinite(config.position.heading_quality_baseline_boost) ||
+        config.position.heading_quality_baseline_boost < 0.0f) {
+        result.fail("position.heading_quality_baseline_boost must be >= 0");
+        return result;
+    }
     if (!isFinite(config.position.filter_alpha) || config.position.filter_alpha <= 0.0f ||
         config.position.filter_alpha > 1.0f) {
         result.fail("position.filter_alpha must be within (0, 1]");
@@ -32,6 +43,11 @@ ConfigValidation validateConfig(const NavigationConfig& config) {
     if (!isFinite(config.path.max_graph_snap_distance_m) ||
         config.path.max_graph_snap_distance_m <= 0.0f) {
         result.fail("path.max_graph_snap_distance_m must be > 0");
+        return result;
+    }
+    if (!isFinite(config.path.replan_max_graph_snap_distance_m) ||
+        config.path.replan_max_graph_snap_distance_m < config.path.max_graph_snap_distance_m) {
+        result.fail("path.replan_max_graph_snap_distance_m must be >= max_graph_snap_distance_m");
         return result;
     }
     if (!isFinite(config.path.waypoint_tolerance_m) || config.path.waypoint_tolerance_m <= 0.0f) {

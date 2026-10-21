@@ -1,0 +1,590 @@
+<mxfile host="Electron" agent="assistant" pages="4">
+  <diagram id="flowchart-utama" name="1. Flowchart Utama">
+    <mxGraphModel dx="1414" dy="889" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="2500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;fontColor=#17202A;align=left;" value="FLOWCHART NAVIGASI SMART TROLLEY — ALUR UTAMA (TaskNavigation 20 Hz)" vertex="1">
+          <mxGeometry height="40" width="760" x="480" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="estopNote" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;dashed=1;fontColor=#78281F;fontSize=11;align=left;" value="EMERGENCY STOP (kapan saja)&#xa;&#xa;Dicek di awal tiap siklus update()&#xa;· motor kiri = kanan = 0 (latched)&#xa;· semua perintah ditolak&#xa;· clear_estop → IDLE (butuh &#39;start&#39; ulang)" vertex="1">
+          <mxGeometry height="150" width="360" x="40" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="safetyNote" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;dashed=1;fontColor=#78281F;fontSize=11;align=left;" value="SAFETY INVARIANT&#xa;&#xa;Motor ≠ 0 HANYA pada state NAVIGATING.&#xa;ERROR · POSITION_LOST · IDLE · ARRIVED ·&#xa;REPLANNING · EMERGENCY_STOP → kiri = kanan = 0&#xa;Safety gate firmware: nav &amp;&amp; !estop → setBoth&#xa;selain itu → motors.stop()" vertex="1">
+          <mxGeometry height="170" width="360" x="40" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="taskNote" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAECEE;strokeColor=#7F8C8D;dashed=1;fontColor=#424949;fontSize=11;align=left;" value="TASK FREERTOS&#xa;&#xa;Core 0:&#xa;· TaskPosition (baca JSON posisi)&#xa;· TaskCommands (parse perintah)&#xa;· TaskTelemetry (publish 5 Hz)&#xa;Core 1:&#xa;· TaskNavigation (FSM+follower 20 Hz)" vertex="1">
+          <mxGeometry height="170" width="360" x="40" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=13;fontStyle=1;" value="MULAI&#xa;Power-on / Boot ESP32-S3" vertex="1">
+          <mxGeometry height="70" width="360" x="620" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="init" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=12;" value="INISIALISASI&#xa;· Baca graph.json + navigation.json (embedded / file)&#xa;· Validasi config &amp; graph · buat task FreeRTOS&#xa;· motor kiri = motor kanan = 0 · FSM = BOOT" vertex="1">
+          <mxGeometry height="170" width="660" x="470" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="idle" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = IDLE&#xa;(motor = 0 · tunggu tujuan)" vertex="1">
+          <mxGeometry height="60" width="280" x="660" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=12;" value="INPUT PERINTAH (TaskCommands)&#xa;destination &lt;n&gt; · start · stop · cancel&#xa;estop · clear_estop · replan" vertex="1">
+          <mxGeometry height="90" width="380" x="610" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Tujuan (destination)&#xa;tersedia?" vertex="1">
+          <mxGeometry height="110" width="360" x="620" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="waitpos" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = WAITING_FOR_POSITION&#xa;(motor = 0)" vertex="1">
+          <mxGeometry height="60" width="360" x="620" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=12;" value="INPUT POSISI (TaskPosition)&#xa;UWB / EKF → (x, y, quality, valid, timestamp)" vertex="1">
+          <mxGeometry height="90" width="380" x="610" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Sample valid &amp; fresh?&#xa;(validateMeasurement&#xa;+ timeout)" vertex="1">
+          <mxGeometry height="110" width="340" x="630" y="1170" as="geometry" />
+        </mxCell>
+        <mxCell id="reject" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=12;" value="TOLAK sample&#xa;invalid_sample_count++&#xa;(log dibatasi)" vertex="1">
+          <mxGeometry height="80" width="320" x="1100" y="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="filt" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FILTER (EMA) → filtered_position&#xa;has_position = true · quality disimpan&#xa;akumulasi travelled_distance" vertex="1">
+          <mxGeometry height="80" width="360" x="620" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="ready" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = READY → PLANNING" vertex="1">
+          <mxGeometry height="60" width="360" x="620" y="1480" as="geometry" />
+        </mxCell>
+        <mxCell id="plan" parent="1" style="shape=mxgraph.flowchart.predefined_process;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;fontStyle=1;" value="SUBROUTINE planRoute()&#xa;snap node terdekat → saring obstacle →&#xa;DIJKSTRA → bangun waypoint&#xa;(detail: halaman 3)" vertex="1">
+          <mxGeometry height="110" width="400" x="600" y="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Rute ditemukan?" vertex="1">
+          <mxGeometry height="110" width="340" x="630" y="1770" as="geometry" />
+        </mxCell>
+        <mxCell id="err" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="FSM = ERROR&#xa;motor = 0 · catat error&#xa;(INVALID_DEST / ROUTE_NOT_FOUND /&#xa;START_NODE_NOT_FOUND)" vertex="1">
+          <mxGeometry height="100" width="340" x="1100" y="1770" as="geometry" />
+        </mxCell>
+        <mxCell id="navmsg" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="FSM = NAVIGATING (20 Hz)&#xa;motor AKTIF · lihat halaman 2" vertex="1">
+          <mxGeometry height="70" width="360" x="620" y="1940" as="geometry" />
+        </mxCell>
+        <mxCell id="subnav" parent="1" style="shape=mxgraph.flowchart.predefined_process;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="SUBROUTINE NAVIGATING&#xa;follower → PID → motor&#xa;(detail: halaman 2)" vertex="1">
+          <mxGeometry height="100" width="360" x="620" y="2070" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Hasil / event&#xa;NAVIGATING?" vertex="1">
+          <mxGeometry height="110" width="340" x="630" y="2220" as="geometry" />
+        </mxCell>
+        <mxCell id="arrived" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;fontSize=12;fontStyle=1;" value="SELESAI (ARRIVED)&#xa;motor = 0 · telemetry final" vertex="1">
+          <mxGeometry height="70" width="360" x="620" y="2400" as="geometry" />
+        </mxCell>
+        <mxCell id="replanBox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=11;" value="REPLANNING&#xa;zeroMotion → planRoute(replan)&#xa;(deviasi / tujuan berubah)" vertex="1">
+          <mxGeometry height="90" width="330" x="1130" y="2210" as="geometry" />
+        </mxCell>
+        <mxCell id="poslostBox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="POSITION_LOST&#xa;zeroMotion · tunggu&#xa;sample valid baru" vertex="1">
+          <mxGeometry height="90" width="330" x="150" y="2210" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="init">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="init" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="idle">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="idle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="waitpos" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=1;entryY=0.5;;endSize=8;" target="idle" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="waitpos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="reject" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="filt" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="reject" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=0.5;entryX=1;entryY=0.25;;endSize=8;" target="c2" value="coba lagi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="filt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="ready">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="ready" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="plan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="d3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="err" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="d3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="navmsg" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="err" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=1;entryY=1;;endSize=8;" target="idle" value="tujuan baru">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="1890" />
+              <mxPoint x="1070" y="1890" />
+              <mxPoint x="1070" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="navmsg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="subnav">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" edge="1" parent="1" source="subnav" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" edge="1" parent="1" source="d4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="arrived" value="ARRIVED">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" edge="1" parent="1" source="d4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="replanBox" value="REPLANNING">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" edge="1" parent="1" source="d4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=0.5;entryX=1;entryY=0.5;;endSize=8;" target="poslostBox" value="POSITION_LOST">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="replanBox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=0;exitY=1;entryX=1;entryY=0.5;;endSize=8;" target="plan" value="replan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" edge="1" parent="1" source="poslostBox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=0;entryY=0.5;;endSize=8;" target="c2" value="sample valid&#xa;→ pulih">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="2320" />
+              <mxPoint x="530" y="2320" />
+              <mxPoint x="530" y="1065" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e25" edge="1" parent="1" source="arrived" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=0;entryY=0.5;;endSize=8;" target="idle" value="tujuan&#xa;baru">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="2459.7" />
+              <mxPoint x="590" y="1450" />
+              <mxPoint x="600" y="1450" />
+              <mxPoint x="600" y="470" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="flowchart-navigating" name="2. Detail NAVIGATING">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="2300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#17202A;align=left;" value="DETAIL — SUBROUTINE NAVIGATING (follower → PID → differential drive → motor)" vertex="1">
+          <mxGeometry height="40" width="860" x="420" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="MASUK: NAVIGATING&#xa;(20 Hz, motor aktif)" vertex="1">
+          <mxGeometry height="70" width="360" x="620" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="stop / replan&#xa;diminta?" vertex="1">
+          <mxGeometry height="100" width="360" x="620" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="stopbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=11;" value="stop → IDLE&#xa;replan → REPLANNING&#xa;zeroMotion terlebih&#xa;dahulu" vertex="1">
+          <mxGeometry height="90" width="300" x="1120" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="posisi fresh?&#xa;(now − last ≤ timeout)" vertex="1">
+          <mxGeometry height="100" width="360" x="620" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="lostbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="zeroMotion →&#xa;POSITION_LOST" vertex="1">
+          <mxGeometry height="70" width="300" x="1120" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="follower.updateHeading(posisi)&#xa;estimasi &amp; koreksi heading dari pergeseran&#xa;(baseline membesar jika quality turun)" vertex="1">
+          <mxGeometry height="80" width="420" x="590" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="waypoints.update(posisi)&#xa;cek waypoint tercapai · maju otomatis&#xa;cek destination_reached" vertex="1">
+          <mxGeometry height="80" width="420" x="590" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="d5" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="destination&#xa;tercapai?" vertex="1">
+          <mxGeometry height="100" width="340" x="630" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="arrbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=11;" value="zeroMotion +&#xa;clearTrackingTelemetry&#xa;→ ARRIVED" vertex="1">
+          <mxGeometry height="80" width="300" x="1120" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="follower.update()&#xa;hitung bearing target · heading error · cross-track&#xa;computeTwist(): PID → ω (saturasi) · speed policy → v" vertex="1">
+          <mxGeometry height="90" width="440" x="580" y="930" as="geometry" />
+        </mxCell>
+        <mxCell id="d7" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="output valid?&#xa;(twist finite)" vertex="1">
+          <mxGeometry height="90" width="340" x="630" y="1070" as="geometry" />
+        </mxCell>
+        <mxCell id="invbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="zeroMotion&#xa;(pertahankan stop)" vertex="1">
+          <mxGeometry height="70" width="300" x="1120" y="1070" as="geometry" />
+        </mxCell>
+        <mxCell id="p8" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="deviation.update(cross_track_error)&#xa;monitor deviasi dari koridor" vertex="1">
+          <mxGeometry height="70" width="420" x="590" y="1210" as="geometry" />
+        </mxCell>
+        <mxCell id="d9" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="deviasi terkonfirmasi&#xa;(&gt; durasi)?" vertex="1">
+          <mxGeometry height="90" width="340" x="630" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="repbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=11;" value="zeroMotion →&#xa;REPLANNING" vertex="1">
+          <mxGeometry height="70" width="300" x="1120" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="d10" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="melebihi soft limit?&#xa;(belum konfirmasi)" vertex="1">
+          <mxGeometry height="90" width="340" x="630" y="1470" as="geometry" />
+        </mxCell>
+        <mxCell id="slowbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=11;" value="kecilkan kecepatan linear&#xa;(tetap jalan pelan&#xa;sambil kumpulkan bukti)" vertex="1">
+          <mxGeometry height="80" width="300" x="1120" y="1470" as="geometry" />
+        </mxCell>
+        <mxCell id="p11" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="twistToMotorCommand()&#xa;v, ω → differential drive → left/right&#xa;clamp ±1 · deadband · trim gain · slew-rate limit" vertex="1">
+          <mxGeometry height="90" width="440" x="580" y="1610" as="geometry" />
+        </mxCell>
+        <mxCell id="p12" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="status_.motor = output&#xa;telemetry: heading, error, jarak,&#xa;cross-track, linear/angular velocity" vertex="1">
+          <mxGeometry height="90" width="440" x="580" y="1750" as="geometry" />
+        </mxCell>
+        <mxCell id="d13" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="rotate in place&#xa;aktif?" vertex="1">
+          <mxGeometry height="90" width="340" x="630" y="1900" as="geometry" />
+        </mxCell>
+        <mxCell id="rotbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=11;" value="v = 0 · hanya putar di tempat&#xa;(ω dari PID, hysteresis masuk&#xa;vs keluar untuk U-turn)" vertex="1">
+          <mxGeometry height="90" width="320" x="1120" y="1900" as="geometry" />
+        </mxCell>
+        <mxCell id="p14" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=11;" value="Safety gate firmware:&#xa;NAVIGATING &amp;&amp; !estop → motors.setBoth(left, right)&#xa;selain itu → motors.stop()" vertex="1">
+          <mxGeometry height="70" width="440" x="580" y="2050" as="geometry" />
+        </mxCell>
+        <mxCell id="x0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=12;fontStyle=1;" value="KELUAR: kembali ke loop&#xa;5 Hz telemetry · siklus berikutnya" vertex="1">
+          <mxGeometry height="70" width="360" x="620" y="2170" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" edge="1" parent="1" source="e0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" edge="1" parent="1" source="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="stopbox" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" edge="1" parent="1" source="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="d2" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" edge="1" parent="1" source="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="lostbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" edge="1" parent="1" source="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p3" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" edge="1" parent="1" source="p3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="p4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" edge="1" parent="1" source="p4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" edge="1" parent="1" source="d5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="arrbox" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n9" edge="1" parent="1" source="d5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p6" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" edge="1" parent="1" source="p6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n11" edge="1" parent="1" source="d7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="invbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n12" edge="1" parent="1" source="d7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p8" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n13" edge="1" parent="1" source="p8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n14" edge="1" parent="1" source="d9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="repbox" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n15" edge="1" parent="1" source="d9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="d10" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n16" edge="1" parent="1" source="d10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="slowbox" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n17" edge="1" parent="1" source="d10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p11" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n18" edge="1" parent="1" source="slowbox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="p11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n19" edge="1" parent="1" source="p11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="p12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n20" edge="1" parent="1" source="p12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n21" edge="1" parent="1" source="d13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8E44AD;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="rotbox" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n22" edge="1" parent="1" source="d13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p14" value="TIDAK&#xa;roda kiri/kanan&#xa;dari v, ω">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n23" edge="1" parent="1" source="rotbox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="p14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n24" edge="1" parent="1" source="p14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="x0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="flowchart-validasi" name="3. Validasi Posisi">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#17202A;align=left;" value="DETAIL — VALIDASI POSISI (validateMeasurement) urutan cek termurah → mahal" vertex="1">
+          <mxGeometry height="40" width="900" x="380" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=12;fontStyle=1;" value="SAMPLE POSISI&#xa;MASUK" vertex="1">
+          <mxGeometry height="60" width="300" x="560" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d0" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=11;" value="INPUT: PositionMeasurement&#xa;schema_version · frame_id · trolley_id&#xa;x_m · y_m · quality · valid · timestamp_ms" vertex="1">
+          <mxGeometry height="90" width="400" x="510" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="schema_version&#xa;== kSchemaVersion?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="frame_id cocok?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="trolley_id terisi&#xa;(bukan kosong)?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="x_m &amp; y_m&#xa;finite (isFinite)?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="valid == true?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="quality finite &amp;&#xa;≥ minimum_quality?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="dalam batas peta&#xa;(+ margin)?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="timestamp ≠ 0 &amp;&#xa;tidak stale?" vertex="1">
+          <mxGeometry height="80" width="340" x="540" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="ok" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=12;fontStyle=1;" value="ACCEPTED&#xa;accepted = true · status = OK" vertex="1">
+          <mxGeometry height="70" width="300" x="560" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="ret" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=11;fontStyle=1;" value="return MeasurementStatus::OK&#xa;FSM: filter (EMA) → pakai posisi" vertex="1">
+          <mxGeometry height="70" width="340" x="540" y="1470" as="geometry" />
+        </mxCell>
+        <mxCell id="rec" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;align=left;" value="TOLAK (tolak paling awal yang gagal)&#xa;&#xa;→ BAD_SCHEMA_VERSION&#xa;→ WRONG_FRAME_ID&#xa;→ WRONG_TROLLEY_ID&#xa;→ NON_FINITE_COORDINATE&#xa;→ INVALID_FLAG&#xa;→ LOW_QUALITY&#xa;→ OUT_OF_MAP_BOUNDS&#xa;→ STALE_TIMESTAMP" vertex="1">
+          <mxGeometry height="220" width="380" x="1100" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="rret" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;fontSize=11;fontStyle=1;" value="return status error&#xa;FSM: invalid_sample_count++&#xa;log dibatasi (1–3 lalu tiap 20)" vertex="1">
+          <mxGeometry height="80" width="340" x="1120" y="1490" as="geometry" />
+        </mxCell>
+        <mxCell id="v0" edge="1" parent="1" source="e0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="d0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1" edge="1" parent="1" source="d0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va1" edge="1" parent="1" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c2" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va2" edge="1" parent="1" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c3" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va3" edge="1" parent="1" source="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c4" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va4" edge="1" parent="1" source="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c5" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va5" edge="1" parent="1" source="c5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c6" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va6" edge="1" parent="1" source="c6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c7" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va7" edge="1" parent="1" source="c7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c8" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="va8" edge="1" parent="1" source="c8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="ok" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vok" edge="1" parent="1" source="ok" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="ret">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vr" edge="1" parent="1" source="rec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;;endSize=8;" target="rret">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx1" edge="1" parent="1" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.1;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx2" edge="1" parent="1" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.22;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx3" edge="1" parent="1" source="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.34;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx4" edge="1" parent="1" source="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.46;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx5" edge="1" parent="1" source="c5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.58;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx6" edge="1" parent="1" source="c6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.7;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx7" edge="1" parent="1" source="c7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.82;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vx8" edge="1" parent="1" source="c8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.94;;endSize=8;" target="rec" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="flowchart-planroute" name="4. planRoute &amp; Dijkstra">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#17202A;align=left;" value="DETAIL — SUBROUTINE planRoute() + ALGORITMA DIJKSTRA" vertex="1">
+          <mxGeometry height="40" width="800" x="420" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;fontStyle=1;" value="MASUK: planRoute(is_replan)" vertex="1">
+          <mxGeometry height="60" width="360" x="600" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="c0" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="graph tersedia?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="destination_node ≥ 0?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="has_position (ada&#xa;posisi valid)?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="snap = findNearestNode(filtered_position, snap_limit)&#xa;· plan awal → max_graph_snap_distance_m&#xa;· replan → replan_max_graph_snap_distance_m (lebih lebar)" vertex="1">
+          <mxGeometry height="90" width="460" x="550" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="snap.found?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="noteReplan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEBD0;strokeColor=#CA6F1E;dashed=1;fontSize=11;align=left;" value="Kasus replan: node terdekat bisa sudah&#xa;terlewati (trolley berbalik-mundur).&#xa;Jika node ada di belakang rute,&#xa;santap ulang ke node TERDEKAT DI DEPAN." vertex="1">
+          <mxGeometry height="110" width="360" x="1030" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="shape=mxgraph.flowchart.predefined_process;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;fontStyle=1;" value="path = dijkstra(graph, snap.node_id, destination)&#xa;min-heap · relax semua edge · mundur rekonstruksi&#xa;ukur plan_time_us (nanodeteksi)" vertex="1">
+          <mxGeometry height="100" width="440" x="560" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="path.success?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="pathToWaypoints() → Waypoint[] (kMaxRouteNodes)&#xa;skip start node jika trolley sudah di atasnya" vertex="1">
+          <mxGeometry height="80" width="460" x="550" y="1130" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="jumlah waypoint &gt; 0?" vertex="1">
+          <mxGeometry height="80" width="320" x="620" y="1260" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="waypoints_.loadRoute() · snapToNearestWaypoint() · setEntryPoint()&#xa;heading awal TIDAK di-seed (UWB tanpa yaw absolut)" vertex="1">
+          <mxGeometry height="80" width="480" x="540" y="1390" as="geometry" />
+        </mxCell>
+        <mxCell id="p7" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=11;" value="telemetry: route[], route_length, start_node, planned_distance_m,&#xa;remaining_distance_m · replan → replan_count++ · deviation_.reset()" vertex="1">
+          <mxGeometry height="80" width="500" x="530" y="1520" as="geometry" />
+        </mxCell>
+        <mxCell id="x0" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="SELESAI planRoute&#xa;transitionTo(NAVIGATING)" vertex="1">
+          <mxGeometry height="70" width="360" x="600" y="1650" as="geometry" />
+        </mxCell>
+        <mxCell id="errbox" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;align=left;" value="GAGAL / ERROR&#xa;· graph null → GRAPH_INVALID&#xa;· destinasi &lt; 0 → INVALID_DESTINATION&#xa;· tanpa posisi → INVALID_POSITION&#xa;· snap tidak ketemu → START_NODE_NOT_FOUND&#xa;· tidak ada rute → ROUTE_NOT_FOUND&#xa;&#xa;setError() + zeroMotion() +&#xa;transitionTo(ERROR)" vertex="1">
+          <mxGeometry height="240" width="400" x="1080" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="dj0" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;fontColor=#1B4F72;align=left;" value="ISI DIJKSTRA (ringkas)" vertex="1">
+          <mxGeometry height="30" width="300" x="90" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dj1" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#EBF5FB;strokeColor=#2E86C1;fontSize=11;" value="init dist[] = ∞, dist[start]=0&#xa;previous[] = -1, settled[] = false&#xa;min-heap push(0, start)" vertex="1">
+          <mxGeometry height="70" width="340" x="90" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="dj2" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#EBF5FB;strokeColor=#2E86C1;fontSize=11;" value="selama heap tidak kosong:&#xa;pop node dg jarak terkecil" vertex="1">
+          <mxGeometry height="60" width="340" x="90" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="dj3" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#EBF5FB;strokeColor=#2E86C1;fontSize=11;" value="untuk tiap tepi (tetangga):&#xa;relax → dist[neighbor] = min(...)&#xa;push bila lebih pendek" vertex="1">
+          <mxGeometry height="70" width="340" x="90" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="dj4" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=11;fontStyle=1;" value="tujuan settled?&#xa;(atau heap habis)" vertex="1">
+          <mxGeometry height="80" width="320" x="100" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="dj5" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#EBF5FB;strokeColor=#2E86C1;fontSize=11;" value="rekonstruksi jalur&#xa;mundur dari tujuan →&#xa;reverse → node_ids[]" vertex="1">
+          <mxGeometry height="70" width="340" x="90" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="dj6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=11;fontStyle=1;" value="hasil: success, jarak total,&#xa;jumlah node (expanded_nodes)" vertex="1">
+          <mxGeometry height="70" width="300" x="110" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="dje1" edge="1" parent="1" source="dj1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;;endSize=8;" target="dj2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dje2" edge="1" parent="1" source="dj2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;;endSize=8;" target="dj3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dje3" edge="1" parent="1" source="dj3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;;endSize=8;" target="dj4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dje4" edge="1" parent="1" source="dj4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;exitX=1;exitY=0.5;entryX=1;entryY=0.5;;endSize=8;" target="dj2" value="belum">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dje5" edge="1" parent="1" source="dj4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;;endSize=8;" target="dj5" value="ya">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dje6" edge="1" parent="1" source="dj5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E86C1;endArrow=block;;endSize=8;" target="dj6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s0" edge="1" parent="1" source="e0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s1" edge="1" parent="1" source="c0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c1" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" edge="1" parent="1" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="c2" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" edge="1" parent="1" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p3" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s4" edge="1" parent="1" source="p3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s5" edge="1" parent="1" source="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p4" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s6" edge="1" parent="1" source="p4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s7" edge="1" parent="1" source="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p5" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s8" edge="1" parent="1" source="p5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="c5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s9" edge="1" parent="1" source="c5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="p6" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s10" edge="1" parent="1" source="p6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="p7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s11" edge="1" parent="1" source="p7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="x0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x0e" edge="1" parent="1" source="c0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.15;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x1e" edge="1" parent="1" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.3;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x2e" edge="1" parent="1" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.45;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x3e" edge="1" parent="1" source="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.6;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x4e" edge="1" parent="1" source="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.75;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="x5e" edge="1" parent="1" source="c5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.9;;endSize=8;" target="errbox" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

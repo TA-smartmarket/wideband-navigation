@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import pygame
 
 from .config import RenderConfig, WindowConfig
+from .floorplan import draw_floorplan
 from .map_loader import MarketMap
 from .native_core import NavState
 from .simulation import SimulationEngine
@@ -168,7 +169,7 @@ class Renderer:
             top_left[0], top_left[1],
             bottom_right[0] - top_left[0], bottom_right[1] - top_left[1],
         )
-        pygame.draw.rect(self.screen, COLOR_PANEL, rect)
+        draw_floorplan(self.screen, viewport)
         self._draw_grid(rect)
 
         self._draw_edges()

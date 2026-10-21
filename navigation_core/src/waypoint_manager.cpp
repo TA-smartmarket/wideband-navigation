@@ -74,19 +74,16 @@ bool WaypointManager::hasPassedWaypoint(int index, const Position2D& position) c
         return false;
     }
     // Projection of (position - current) on the unit direction of the segment.
-    const float along = ((position.x_m - current.x_m) * dir_x +
-                         (position.y_m - current.y_m) * dir_y) / length;
+    const float along = ((position.x_m - current.x_m) * dir_x + (position.y_m - current.y_m) * dir_y) / length;
     if (along <= -kPassedMarginM) {
         return false;  // still behind the waypoint
     }
     // Perpendicular distance to the infinite line through the segment.
     const float perpendicular =
-        std::fabs((position.x_m - current.x_m) * (-dir_y / length) +
-                  (position.y_m - current.y_m) * (dir_x / length));
+        std::fabs((position.x_m - current.x_m) * (-dir_y / length) + (position.y_m - current.y_m) * (dir_x / length));
     // Accept when the trolley is clearly ahead of the waypoint and roughly on
     // the corridor towards the next node.
-    return along >= config_.waypoint_tolerance_m * 0.5f &&
-           perpendicular <= config_.max_cross_track_error_m;
+    return along >= config_.waypoint_tolerance_m * 0.5f && perpendicular <= config_.max_cross_track_error_m;
 }
 
 WaypointProgress WaypointManager::update(const Position2D& position) {

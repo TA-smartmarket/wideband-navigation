@@ -13,8 +13,10 @@ bool equalsIgnoreCase(const char* a, const char* b, std::size_t length) {
     for (std::size_t i = 0; i < length; ++i) {
         char ca = a[i];
         char cb = b[i];
-        if (ca >= 'A' && ca <= 'Z') ca = static_cast<char>(ca - 'A' + 'a');
-        if (cb >= 'A' && cb <= 'Z') cb = static_cast<char>(cb - 'A' + 'a');
+        if (ca >= 'A' && ca <= 'Z')
+            ca = static_cast<char>(ca - 'A' + 'a');
+        if (cb >= 'A' && cb <= 'Z')
+            cb = static_cast<char>(cb - 'A' + 'a');
         if (ca != cb) {
             return false;
         }
@@ -94,53 +96,73 @@ bool parseInteger(const char* text, int& out) {
 
 const char* commandName(CommandKind kind) {
     switch (kind) {
-        case CommandKind::HELP: return "help";
-        case CommandKind::STATUS: return "status";
-        case CommandKind::GRAPH: return "graph";
-        case CommandKind::ROUTE: return "route";
-        case CommandKind::POSITION: return "position";
-        case CommandKind::DESTINATION: return "destination";
-        case CommandKind::START: return "start";
-        case CommandKind::STOP: return "stop";
-        case CommandKind::CANCEL: return "cancel";
-        case CommandKind::ESTOP: return "estop";
-        case CommandKind::CLEAR_ESTOP: return "clear_estop";
-        case CommandKind::REPLAN: return "replan";
-        case CommandKind::DEBUG_ON: return "debug on";
-        case CommandKind::DEBUG_OFF: return "debug off";
-        case CommandKind::RPM: return "rpm";
-        case CommandKind::MOVE_REVOLUTIONS: return "move";
-        case CommandKind::ZERO_POSITION: return "zero";
-        case CommandKind::STEPPER_STATUS: return "stepper";
-        case CommandKind::RESUME: return "resume";
-        case CommandKind::UNKNOWN: return "unknown";
-        default: return "none";
+        case CommandKind::HELP:
+            return "help";
+        case CommandKind::STATUS:
+            return "status";
+        case CommandKind::GRAPH:
+            return "graph";
+        case CommandKind::ROUTE:
+            return "route";
+        case CommandKind::POSITION:
+            return "position";
+        case CommandKind::DESTINATION:
+            return "destination";
+        case CommandKind::START:
+            return "start";
+        case CommandKind::STOP:
+            return "stop";
+        case CommandKind::CANCEL:
+            return "cancel";
+        case CommandKind::ESTOP:
+            return "estop";
+        case CommandKind::CLEAR_ESTOP:
+            return "clear_estop";
+        case CommandKind::REPLAN:
+            return "replan";
+        case CommandKind::DEBUG_ON:
+            return "debug on";
+        case CommandKind::DEBUG_OFF:
+            return "debug off";
+        case CommandKind::RPM:
+            return "rpm";
+        case CommandKind::MOVE_REVOLUTIONS:
+            return "move";
+        case CommandKind::ZERO_POSITION:
+            return "zero";
+        case CommandKind::STEPPER_STATUS:
+            return "stepper";
+        case CommandKind::RESUME:
+            return "resume";
+        case CommandKind::UNKNOWN:
+            return "unknown";
+        default:
+            return "none";
     }
 }
 
 const char* commandHelpText() {
-    return
-        "Commands (prefix with CMD: when sharing the link with position JSON)\n"
-        "  help            show this text\n"
-        "  status          human readable navigation status\n"
-        "  graph           graph summary (nodes, edges)\n"
-        "  route           planned route and distance\n"
-        "  position        latest accepted UWB position\n"
-        "  destination <n> set destination node\n"
-        "  start           start/resume navigation to the held destination\n"
-        "  stop            stop and keep the destination\n"
-        "  cancel          cancel navigation and clear the destination\n"
-        "  estop           software emergency stop\n"
-        "  clear_estop     clear the emergency stop (does not resume motion)\n"
-        "  replan          force a replan on the next cycle\n"
-        "  debug on|off    enable/disable verbose logging\n"
-        "\n"
-        "Stepper bench control (NEMA 17 + A4988):\n"
-        "  rpm <l> [r]     run the axes at a signed RPM (r defaults to l)\n"
-        "  move <l> [r]    turn the axes by a number of revolutions, then stop\n"
-        "  zero            declare the current position as step 0\n"
-        "  stepper         report position (steps/rev), RPM, rate and direction\n"
-        "  resume          return to navigation velocity mode\n";
+    return "Commands (prefix with CMD: when sharing the link with position JSON)\n"
+           "  help            show this text\n"
+           "  status          human readable navigation status\n"
+           "  graph           graph summary (nodes, edges)\n"
+           "  route           planned route and distance\n"
+           "  position        latest accepted UWB position\n"
+           "  destination <n> set destination node\n"
+           "  start           start/resume navigation to the held destination\n"
+           "  stop            stop and keep the destination\n"
+           "  cancel          cancel navigation and clear the destination\n"
+           "  estop           software emergency stop\n"
+           "  clear_estop     clear the emergency stop (does not resume motion)\n"
+           "  replan          force a replan on the next cycle\n"
+           "  debug on|off    enable/disable verbose logging\n"
+           "\n"
+           "Stepper bench control (NEMA 17 + A4988):\n"
+           "  rpm <l> [r]     run the axes at a signed RPM (r defaults to l)\n"
+           "  move <l> [r]    turn the axes by a number of revolutions, then stop\n"
+           "  zero            declare the current position as step 0\n"
+           "  stepper         report position (steps/rev), RPM, rate and direction\n"
+           "  resume          return to navigation velocity mode\n";
 }
 
 bool parseCommand(const char* line, std::size_t length, ParsedCommand& out) {
@@ -192,8 +214,7 @@ bool parseCommand(const char* line, ParsedCommand& out) {
     // Split the verb from an optional argument.
     char verb[32];
     std::size_t index = 0;
-    while (cursor[index] != '\0' && cursor[index] != ' ' && cursor[index] != '\t' &&
-           index + 1 < sizeof(verb)) {
+    while (cursor[index] != '\0' && cursor[index] != ' ' && cursor[index] != '\t' && index + 1 < sizeof(verb)) {
         verb[index] = cursor[index];
         ++index;
     }
@@ -215,8 +236,7 @@ bool parseCommand(const char* line, ParsedCommand& out) {
         // Take the first token.
         char token[24];
         std::size_t n = 0;
-        while (second[n] != '\0' && second[n] != ' ' && second[n] != '\t' &&
-               n + 1 < sizeof(token)) {
+        while (second[n] != '\0' && second[n] != ' ' && second[n] != '\t' && n + 1 < sizeof(token)) {
             token[n] = second[n];
             ++n;
         }

@@ -42,7 +42,7 @@
     "heading_kp": 1.6,
     "max_linear_accel_mps2": 0.35,
     "max_angular_accel_radps2": 2.5,
-    "heading_deadband_deg": 1.5,
+    "heading_deadband_deg": 5.0,
     "max_motor_command_change_per_s": 6.0
   },
   "heading_pid": {

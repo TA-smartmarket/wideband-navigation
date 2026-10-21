@@ -17,8 +17,8 @@ pio test -e native -f test_integration   :: one suite
 | `test_stepper` | `tests/test_stepper/` | STEP-rate/RPM/velocity conversion, steps per meter, configuration validation, continuous mode, DDS step accumulation, direction and inversion, position mode (exact stop, deceleration profile, negative moves), differential stepper drive, spin-in-place producing ~0 translational odometry |
 | `test_integration` | `tests/test_integration/` | the complete pipeline with a plant in the loop |
 
-Current status: **111 test cases, all passing**
-(graph_dijkstra 15 + geometry_pid_drive 20 + waypoint_fsm 35 + command_parser 10 +
+Current status: **113 test cases, all passing**
+(graph_dijkstra 17 + geometry_pid_drive 20 + waypoint_fsm 35 + command_parser 10 +
 stepper 19 + integration 12).
 
 ## 2. Integration tests
@@ -172,6 +172,15 @@ caught several real defects, including:
   made path efficiency depend on when the replan happened;
 * the navigation-side `heading_kp` being silently overridden by a duplicated
   value in the `heading_pid` block, so the documented tuning knob did nothing;
+* the heading PID fed the raw `target - heading` difference, so a turn near the
+  ±π branch cut drove ~358° the *long* way around instead of the 2° short way —
+  observed as a wide arc and repeated re-rotation on U-turns (fixed with a
+  `circular` PID mode that wraps error and derivative through the shortest
+  angular distance);
+* rotate-in-place releasing the instant the *estimated* error crossed its entry
+  threshold — the estimate leads the true heading by the motor/estimator lag, so
+  it began translating with a still-large real error around a U-turn (fixed with
+  a latch: enter at 55°, release at 25°);
 * position RMSE including samples taken before the first position was accepted,
   where the navigation position is still the (0,0) default (a bogus 2.5 m max);
 * the simulator clock starting at 0 ms, so the very first, perfectly good sample

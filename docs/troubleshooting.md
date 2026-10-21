@@ -16,8 +16,10 @@ python -m pip install -r simulator/requirements.txt
 ### `no C++ compiler found`
 
 The simulator compiles the navigation core into a shared library. Install MSYS2
-and its UCRT64 g++ (`pacman -S mingw-w64-ucrt-x86_64-gcc`), or point the build at
-an existing compiler:
+and its UCRT64 g++ (`pacman -S mingw-w64-ucrt-x86_64-gcc`), or use
+[w64devkit](https://github.com/skeeto/w64devkit/releases) (a ~64 MB
+self-extracting 7z with no installer), or point the build at an existing
+compiler:
 
 ```bat
 set CXX=C:\path\to\g++.exe
@@ -26,6 +28,11 @@ python scripts/build_native_core.py --force --verbose
 
 The script also auto-detects `C:\msys64\ucrt64\bin\g++.exe` and
 `C:\msys64\mingw64\bin\g++.exe`.
+
+If the build succeeds while the simulator is already running, the new library is
+written next to the running one and a "stale DLL" still shows. Stop the
+simulator Python process, then overwrite `build/native/navcore.dll` with the
+`navcore.dll.new` the build produced and restart.
 
 ### `Could not find module 'navcore.dll' (or one of its dependencies)`
 
@@ -77,8 +84,9 @@ Check the status panel:
 
 ### The trolley circles forever
 
-Two historical causes, both fixed; if it reappears, check that the core is
-rebuilt:
+Three historical causes, all fixed; if it reappears, check that the core is
+rebuilt and that the DLL actually swapped in (see "stale DLL" under the compiler
+section):
 
 1. **Heading corrections during in-place rotation.** A spin produces a tangential
    displacement, so a position-derived heading would be ~90° off. The estimator
@@ -87,6 +95,13 @@ rebuilt:
 2. **Wrong `dt`.** The follower must use the measured elapsed time, not
    `1/navigation_rate`. If a build assumes the nominal rate while the plant steps
    faster, the dead reckoning runs too fast.
+3. **Raw angular error in the heading PID.** Feeding $(\psi_{\text{des}} - \psi)$
+   straight into the controller means a ~180° turn can drive ~358° the *long* way
+   around the branch cut, tracing a wide arc and re-rotating. The heading PID now
+   runs in `circular` mode and wraps the error (and its derivative) through the
+   shortest angular distance. Rotate-in-place also latches with hysteresis —
+   entered at the 55° threshold, released at 25° — so a ~180° turn completes on
+   the spot instead of oscillating at the boundary.
 
 ```bat
 python scripts/build_native_core.py --force
@@ -118,7 +133,7 @@ waypoint radius so the destination remains the tighter criterion.
 
 ### The trolley weaves on long straights
 
-`motion.heading_deadband_deg` (default 1.5 deg) tapers the angular command
+`motion.heading_deadband_deg` (default 5.0 deg) tapers the angular command
 inside that band so residual UWB noise stops steering the trolley. Raise it (up to
 ~3 deg) for a cleaner sensor, or set 0 to disable the taper. If the weave persists,
 raise `motion.max_motor_command_change_per_s` is *not* the fix - check the chassis

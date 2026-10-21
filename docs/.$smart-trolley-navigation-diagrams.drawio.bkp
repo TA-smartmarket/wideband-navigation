@@ -1,0 +1,360 @@
+<mxfile host="Electron" agent="Codex" pages="2">
+  <diagram id="block-diagram" name="Blok Diagram">
+    <mxGraphModel dx="4904" dy="2071" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;fontColor=#17202A;align=left;" value="SMART TROLLEY AUTONOMOUS NAVIGATION — BLOK DIAGRAM" vertex="1">
+          <mxGeometry height="40" width="900" x="40" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="ext" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8F9F9;strokeColor=#566573;dashed=1;fontStyle=1;fontColor=#566573;" value="SISTEM EKSTERNAL" vertex="1">
+          <mxGeometry height="690" width="350" x="40" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="nav" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EBF5FB;strokeColor=#2E86C1;dashed=1;fontStyle=1;fontColor=#1B4F72;" value="NAVIGATION SYSTEM" vertex="1">
+          <mxGeometry height="690" width="710" x="430" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="hw" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF9E7;strokeColor=#B7950B;dashed=1;fontStyle=1;fontColor=#7D6608;" value="HARDWARE TROLLEY" vertex="1">
+          <mxGeometry height="690" width="350" x="1180" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontColor=#512E5F;fontStyle=1;" value="Smart Market UI\n(pilih tujuan)" vertex="1">
+          <mxGeometry height="70" width="260" x="80" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="server" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontColor=#512E5F;fontStyle=1;" value="Smart Market Server\nmap • graph • destination" vertex="1">
+          <mxGeometry height="75" width="260" x="80" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="uwb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontColor=#145A32;fontStyle=1;" value="UWB + EKF Positioning\n(x, y, quality, valid)" vertex="1">
+          <mxGeometry height="75" width="260" x="80" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="serial" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;fontColor=#78281F;fontStyle=1;" value="USB / Serial\ncommand &amp; position input" vertex="1">
+          <mxGeometry height="75" width="260" x="80" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="core" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontColor=#154360;fontStyle=1;" value="navigation_core — C++17 portable\nGraph + obstacle filter → Dijkstra → waypoint manager\npath follower → PID → differential drive\nNavigationFsm • position validator • telemetry" vertex="1">
+          <mxGeometry height="135" width="600" x="485" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="firmware" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontColor=#154360;fontStyle=1;" value="ESP32-S3 FIRMWARE (FreeRTOS)\nCore 0: TaskPosition • TaskCommands • TaskTelemetry (5 Hz)\nCore 1: TaskNavigation (20 Hz): FSM + follower + motor" vertex="1">
+          <mxGeometry height="105" width="600" x="485" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="sim" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontColor=#154360;fontStyle=1;" value="DESKTOP SIMULATOR\nPython + pygame • ctypes C ABI\nmock UWB • trolley physics • scenarios • metrics" vertex="1">
+          <mxGeometry height="105" width="600" x="485" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="motor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F9E79F;strokeColor=#B7950B;fontColor=#7D6608;fontStyle=1;" value="Motor Driver\nPWM / STEP-DIR" vertex="1">
+          <mxGeometry height="75" width="250" x="1230" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="wheels" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F9E79F;strokeColor=#B7950B;fontColor=#7D6608;fontStyle=1;" value="Differential Drive\nLeft + Right Wheel / Motor" vertex="1">
+          <mxGeometry height="75" width="250" x="1230" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="telemetry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FADBD8;strokeColor=#C0392B;fontColor=#78281F;fontStyle=1;" value="Telemetry\nstatus • route • faults" vertex="1">
+          <mxGeometry height="75" width="250" x="1230" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="tests" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAECEE;strokeColor=#7F8C8D;fontColor=#424949;fontStyle=1;" value="Native Tests + Config Validation\nUnity / PlatformIO / scripts" vertex="1">
+          <mxGeometry height="75" width="250" x="1230" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=4;" value="" vertex="1">
+          <mxGeometry height="680" width="840" x="-985" y="40.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;rotation=90;" value="" vertex="1">
+          <mxGeometry height="120" width="440" x="-1025" y="320.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;rotation=90;" value="" vertex="1">
+          <mxGeometry height="120" width="440" x="-785" y="320.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;rotation=90;" value="" vertex="1">
+          <mxGeometry height="120" width="440" x="-545" y="320.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-5" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;" value="ROBOTNYA" vertex="1">
+          <mxGeometry height="80" width="120" x="-955" y="620.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 5" vertex="1">
+          <mxGeometry height="30" width="60" x="-835" y="531.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-7" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 1" vertex="1">
+          <mxGeometry height="30" width="60" x="-835" y="210.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 3" vertex="1">
+          <mxGeometry height="30" width="60" x="-835" y="363.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-9" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 4" vertex="1">
+          <mxGeometry height="30" width="60" x="-835" y="442.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-10" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 2" vertex="1">
+          <mxGeometry height="30" width="60" x="-835" y="285.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-11" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 6" vertex="1">
+          <mxGeometry height="30" width="60" x="-595" y="210.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 7" vertex="1">
+          <mxGeometry height="30" width="60" x="-595" y="285.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-13" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 8" vertex="1">
+          <mxGeometry height="30" width="60" x="-595" y="363.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 9" vertex="1">
+          <mxGeometry height="30" width="60" x="-595" y="442.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 10" vertex="1">
+          <mxGeometry height="30" width="60" x="-595" y="531.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-16" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 11" vertex="1">
+          <mxGeometry height="30" width="60" x="-355" y="203.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-17" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 12" vertex="1">
+          <mxGeometry height="30" width="60" x="-355" y="278.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-18" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 13" vertex="1">
+          <mxGeometry height="30" width="60" x="-355" y="356.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-19" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 14" vertex="1">
+          <mxGeometry height="30" width="60" x="-355" y="435.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-20" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Barang 15" vertex="1">
+          <mxGeometry height="30" width="60" x="-355" y="524.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-21" parent="1" style="shape=corner;whiteSpace=wrap;html=1;rotation=-90;" value="" vertex="1">
+          <mxGeometry height="920" width="750" x="-980" y="-40.75" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-22" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;X&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="-145" y="764.25" as="geometry" />
+        </mxCell>
+        <mxCell id="Urrr_8TFJhEl7z2-twlU-23" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 30px;&quot;&gt;Y&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="-1090" y="0.75" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;fontColor=#17202A;align=left;" value="FLOWCHART NAVIGASI SMART TROLLEY — ALUR UTAMA (TaskNavigation 20 Hz)" vertex="1">
+          <mxGeometry height="40" width="760" x="-2160" y="-900" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;dashed=1;fontColor=#78281F;fontSize=11;align=left;" value="EMERGENCY STOP (kapan saja)&#xa;&#xa;Dicek di awal tiap siklus update()&#xa;· motor kiri = kanan = 0 (latched)&#xa;· semua perintah ditolak&#xa;· clear_estop → IDLE (butuh &#39;start&#39; ulang)" vertex="1">
+          <mxGeometry height="150" width="360" x="-2600" y="-850" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;dashed=1;fontColor=#78281F;fontSize=11;align=left;" value="SAFETY INVARIANT&#xa;&#xa;Motor ≠ 0 HANYA pada state NAVIGATING.&#xa;ERROR · POSITION_LOST · IDLE · ARRIVED ·&#xa;REPLANNING · EMERGENCY_STOP → kiri = kanan = 0&#xa;Safety gate firmware: nav &amp;&amp; !estop → setBoth&#xa;selain itu → motors.stop()" vertex="1">
+          <mxGeometry height="170" width="360" x="-2600" y="-670" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAECEE;strokeColor=#7F8C8D;dashed=1;fontColor=#424949;fontSize=11;align=left;" value="TASK FREERTOS&#xa;&#xa;Core 0:&#xa;· TaskPosition (baca JSON posisi)&#xa;· TaskCommands (parse perintah)&#xa;· TaskTelemetry (publish 5 Hz)&#xa;Core 1:&#xa;· TaskNavigation (FSM+follower 20 Hz)" vertex="1">
+          <mxGeometry height="170" width="360" x="-2600" y="-470" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontSize=13;fontStyle=1;" value="MULAI&#xa;Power-on / Boot ESP32-S3" vertex="1">
+          <mxGeometry height="70" width="360" x="-2020" y="-850" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-6" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=12;" value="INISIALISASI&#xa;· Baca graph.json + navigation.json (embedded / file)&#xa;· Validasi config &amp; graph · buat task FreeRTOS&#xa;· motor kiri = motor kanan = 0 · FSM = BOOT" vertex="1">
+          <mxGeometry height="170" width="660" x="-2170" y="-720" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-7" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = IDLE&#xa;(motor = 0 · tunggu tujuan)" vertex="1">
+          <mxGeometry height="60" width="280" x="-1980" y="-480" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-8" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=12;" value="INPUT PERINTAH (TaskCommands)&#xa;destination &lt;n&gt; · start · stop · cancel&#xa;estop · clear_estop · replan" vertex="1">
+          <mxGeometry height="90" width="380" x="-2030" y="-350" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-9" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Tujuan (destination)&#xa;tersedia?" vertex="1">
+          <mxGeometry height="110" width="360" x="-2020" y="-200" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-10" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = WAITING_FOR_POSITION&#xa;(motor = 0)" vertex="1">
+          <mxGeometry height="60" width="360" x="-2020" y="-20" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-11" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;fontSize=12;" value="INPUT POSISI (TaskPosition)&#xa;UWB / EKF → (x, y, quality, valid, timestamp)" vertex="1">
+          <mxGeometry height="90" width="380" x="-2030" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-12" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Sample valid &amp; fresh?&#xa;(validateMeasurement&#xa;+ timeout)" vertex="1">
+          <mxGeometry height="110" width="340" x="-2010" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-13" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=12;" value="TOLAK sample&#xa;invalid_sample_count++&#xa;(log dibatasi)" vertex="1">
+          <mxGeometry height="80" width="320" x="-1540" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-14" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FILTER (EMA) → filtered_position&#xa;has_position = true · quality disimpan&#xa;akumulasi travelled_distance" vertex="1">
+          <mxGeometry height="80" width="360" x="-2020" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-15" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;" value="FSM = READY → PLANNING" vertex="1">
+          <mxGeometry height="60" width="360" x="-2020" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-16" parent="1" style="shape=mxgraph.flowchart.predefined_process;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontSize=12;fontStyle=1;" value="SUBROUTINE planRoute()&#xa;snap node terdekat → saring obstacle →&#xa;DIJKSTRA → bangun waypoint&#xa;(detail: halaman 3)" vertex="1">
+          <mxGeometry height="110" width="400" x="-2040" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-17" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Rute ditemukan?" vertex="1">
+          <mxGeometry height="110" width="340" x="-2010" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-18" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="FSM = ERROR&#xa;motor = 0 · catat error&#xa;(INVALID_DEST / ROUTE_NOT_FOUND /&#xa;START_NODE_NOT_FOUND)" vertex="1">
+          <mxGeometry height="100" width="340" x="-1540" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-19" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="FSM = NAVIGATING (20 Hz)&#xa;motor AKTIF · lihat halaman 2" vertex="1">
+          <mxGeometry height="70" width="360" x="-2020" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-20" parent="1" style="shape=mxgraph.flowchart.predefined_process;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontSize=12;fontStyle=1;" value="SUBROUTINE NAVIGATING&#xa;follower → PID → motor&#xa;(detail: halaman 2)" vertex="1">
+          <mxGeometry height="100" width="360" x="-2020" y="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-21" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontSize=12;fontStyle=1;" value="Hasil / event&#xa;NAVIGATING?" vertex="1">
+          <mxGeometry height="110" width="340" x="-2010" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-22" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;fontSize=12;fontStyle=1;" value="SELESAI (ARRIVED)&#xa;motor = 0 · telemetry final" vertex="1">
+          <mxGeometry height="70" width="360" x="-2020" y="1480" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-23" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FDEBD0;strokeColor=#CA6F1E;fontSize=11;" value="REPLANNING&#xa;zeroMotion → planRoute(replan)&#xa;(deviasi / tujuan berubah)" vertex="1">
+          <mxGeometry height="90" width="330" x="-1510" y="1290" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-24" parent="1" style="whiteSpace=wrap;html=1;rounded=0;fillColor=#FADBD8;strokeColor=#C0392B;fontSize=11;" value="POSITION_LOST&#xa;zeroMotion · tunggu&#xa;sample valid baru" vertex="1">
+          <mxGeometry height="90" width="330" x="-2490" y="1290" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-25" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-26" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-27" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-28" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-29" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-10" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-30" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=1;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-7" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-31" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-32" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-33" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-13" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-34" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-14" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-35" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=0.5;entryX=1;entryY=0.25;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-11" value="coba lagi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-36" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-37" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-38" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-39" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-18" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-40" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-19" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-41" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=1;entryY=1;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-7" value="tujuan baru">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-1540" y="970" />
+              <mxPoint x="-1570" y="970" />
+              <mxPoint x="-1570" y="-420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-42" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-43" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#566573;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-44" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-22" value="ARRIVED">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-45" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-23" value="REPLANNING">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-46" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=0.5;entryX=1;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-24" value="POSITION_LOST">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-47" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;exitX=0;exitY=1;entryX=1;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-16" value="replan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-48" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=0;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-11" value="sample valid&#xa;→ pulih">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-2490" y="1400" />
+              <mxPoint x="-2110" y="1400" />
+              <mxPoint x="-2110" y="145" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X8mJJN-friKsMu1i_5RE-49" edge="1" parent="1" source="X8mJJN-friKsMu1i_5RE-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;exitX=0;exitY=1;entryX=0;entryY=0.5;;endSize=8;" target="X8mJJN-friKsMu1i_5RE-7" value="tujuan&#xa;baru">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-2050" y="1539.6999999999998" />
+              <mxPoint x="-2050" y="530" />
+              <mxPoint x="-2040" y="530" />
+              <mxPoint x="-2040" y="-450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="flowchart-navigation" name="Flowchart Navigasi">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ftitle" value="FLOWCHART NAVIGASI SMART TROLLEY" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;fontColor=#17202A;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="900" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Mulai / Boot ESP32" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="85" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="init" value="BOOT → IDLE\nLoad graph.json + navigation.json, validasi FSM,\ninisialisasi task FreeRTOS dan motor = 0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;" vertex="1" parent="1">
+          <mxGeometry x="540" y="185" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dest" value="IDLE / WAITING_FOR_POSITION\nTaskCommands menerima destination / start / stop / replan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8DAEF;strokeColor=#8E44AD;" vertex="1" parent="1">
+          <mxGeometry x="540" y="295" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pos" value="TaskPosition menerima UWB / EKF\n(x, y, quality, valid, timestamp) → latest position" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;" vertex="1" parent="1">
+          <mxGeometry x="540" y="405" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="valid" value="Posisi valid &amp; fresh?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="590" y="520" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="reject" value="Tolak sample\ncatat invalid / stale" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FADBD8;strokeColor=#C0392B;" vertex="1" parent="1">
+          <mxGeometry x="970" y="530" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="plan" value="READY → PLANNING\nSnap posisi ke graph, filter obstacle,\njalankan Dijkstra, bangun waypoint" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2471A3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="655" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="route" value="Route tersedia?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="590" y="770" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="error" value="ERROR\nmotor = 0\nlaporkan kegagalan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FADBD8;strokeColor=#C0392B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="780" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="navigate" value="NAVIGATING — TaskNavigation 20 Hz\nwaypoint manager → bearing &amp; heading error\nPID → v, ω → differential drive → left/right motor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#1F618D;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="910" width="420" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="arrive" value="Tujuan tercapai?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FCF3CF;strokeColor=#B7950B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="915" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="done" value="ARRIVED\nstop motor + kirim telemetry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5F5E3;strokeColor=#27AE60;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1030" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="monitor" value="Monitoring selama NAVIGATING:\nPOSITION_LOST: timeout posisi → motor 0\nREPLANNING: deviasi / tujuan berubah\nEMERGENCY_STOP: motor 0 (latched)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEBD0;strokeColor=#CA6F1E;" vertex="1" parent="1">
+          <mxGeometry x="980" y="915" width="310" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" edge="1" parent="1" source="start" target="init" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f2" edge="1" parent="1" source="init" target="dest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f3" edge="1" parent="1" source="dest" target="pos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f4" edge="1" parent="1" source="pos" target="valid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f5" value="Tidak" edge="1" parent="1" source="valid" target="reject" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;" />
+        <mxCell id="f6" value="Ya" edge="1" parent="1" source="valid" target="plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;" />
+        <mxCell id="f7" edge="1" parent="1" source="reject" target="pos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;dashed=1;endArrow=block;" />
+        <mxCell id="f8" edge="1" parent="1" source="plan" target="route" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f9" value="Tidak" edge="1" parent="1" source="route" target="error" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;endArrow=block;" />
+        <mxCell id="f10" value="Ya" edge="1" parent="1" source="route" target="navigate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;" />
+        <mxCell id="f11" edge="1" parent="1" source="navigate" target="arrive" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" />
+        <mxCell id="f12" value="Ya" edge="1" parent="1" source="arrive" target="done" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;endArrow=block;" />
+        <mxCell id="f13" value="Tidak" edge="1" parent="1" source="arrive" target="monitor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;endArrow=block;" />
+        <mxCell id="f14" value="replan / recover" edge="1" parent="1" source="monitor" target="plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#CA6F1E;dashed=1;endArrow=block;" />
+        <mxCell id="f15" value="normal loop" edge="1" parent="1" source="monitor" target="navigate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2471A3;dashed=1;endArrow=block;" />
+        <mxCell id="f16" value="sample berikutnya" edge="1" parent="1" source="navigate" target="pos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;dashed=1;endArrow=block;" />
+        <mxCell id="f17" value="clear E-stop + start ulang" edge="1" parent="1" source="error" target="dest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C0392B;dashed=1;endArrow=block;" />
+        <mxCell id="safety" value="Safety invariant: motor command non-zero hanya pada state NAVIGATING.\nPosition hilang, route gagal, stop, cancel, dan E-stop selalu menghasilkan left = 0, right = 0." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDEC;strokeColor=#C0392B;fontColor=#78281F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="360" height="105" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

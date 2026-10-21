@@ -212,6 +212,14 @@ Each cycle, with the active waypoint target $p_t$:
 
 $$v = v_{\min} + (v_{\max} - v_{\min})\left(1 - \frac{\lvert e_\psi\rvert - \theta_{\text{slow}}}{\theta_{\text{rot}} - \theta_{\text{slow}}}\right)$$
 
+Rotate-in-place is latched with hysteresis: the manoeuvre is entered when the
+error exceeds `rotate_in_place_threshold_deg` (55°) but only released once it
+falls to `heading_error_slow_deg` (25°).  The estimated heading leads the true
+heading by the motor/estimator lag, so releasing the instant the estimate
+crosses 55° would resume translation while the real error is still ~65°, tracing
+a wide arc and re-entering rotation around a U-turn.  Latching lets a ~180° turn
+complete on the spot.
+
 ### Corner handling
 
 A sharp turn at the *next* node derates the speed quadratically as the waypoint
@@ -241,7 +249,7 @@ deadband the angular command is tapered with a smoothstep:
 $$s(e) = \begin{cases} 1 & |e| \ge \theta_{db} \\ x^2(3-2x),\; x = |e|/\theta_{db} & |e| < \theta_{db}\end{cases}
 \qquad \omega = s(e)\cdot\omega_{PID}$$
 
-with `motion.heading_deadband_deg` = 1.5°. Smoothstep rather than a hard threshold
+with `motion.heading_deadband_deg` = 5.0°. Smoothstep rather than a hard threshold
 because both the scale and its derivative vanish at the edge, so the command is
 C1-continuous: a step would reintroduce chatter. The taper applies to the
 **command only** - the reported heading error and all metrics keep the true value,
@@ -286,8 +294,13 @@ $$u = K_p e + I + K_d \dot{d}_{\text{filt}}$$
 
 where
 
-* $e = \psi_{\text{des}} - \psi$ (the caller wraps the setpoint into range),
-* the derivative acts on the measurement, $-(q_k - q_{k-1})/\Delta t$, then
+* $e = \psi_{\text{des}} - \psi$, computed through the *shortest angular
+  distance* (the heading PID runs in `circular` mode).  A raw difference near
+  $\pm\pi$ spans almost $2\pi$, so without this wrap a ~180° turn would be
+  driven around the *long* way, producing a wide arc and re-rotation instead of
+  a clean on-the-spot turn;
+* the derivative acts on the measurement through the same shortest-distance
+  wrap, $-(q_k - q_{k-1})_{\text{wrap}}/\Delta t$, then
   $d_{\text{filt}} \leftarrow \alpha d_{\text{raw}} + (1-\alpha) d_{\text{filt}}$
   with $\alpha = 0.25$; acting on the measurement avoids derivative kick from a
   setpoint step, and the filter limits noise amplification from a UWB-derived

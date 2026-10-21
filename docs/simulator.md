@@ -49,17 +49,22 @@ python scripts/run_simulator.py --all --headless --json results/sweep.json
 +----------------------------------------------------+------------------+
 |  SMART_MARKET_MAIN v1  12.0 x 8.0 m                |  NAVIGATION      |
 |                                                    |  POSE            |
-|   grid, graph edges, node ids                      |  CONTROL         |
-|   planned route (orange), completed part (grey)    |  UWB / FAULTS    |
-|   trajectory (cyan), UWB measurement (red)         |  METRICS (live)  |
-|   true trolley (white body + nose)                 |  DEBUG           |
-|   navigation input point (cyan ring)               |  CONTROLS        |
+|   store floor plan (walls, shelves, checkout,      |  CONTROL         |
+|     entrance, parking), grid, graph edges          |  UWB / FAULTS    |
+|   planned route (orange), completed part (grey)    |  METRICS (live)  |
+|   trajectory (cyan), UWB measurement (red)         |  DEBUG           |
+|   true trolley (white body + nose)                 |  CONTROLS        |
+|   navigation input point (cyan ring)               |                  |
 +----------------------------------------------------+------------------+
 ```
 
 Rendering is a pure observer: it reads simulation state and never writes back
 into navigation. World meters are converted to pixels only inside
-`renderer.Viewport` (the vertical axis is flipped there).
+`renderer.Viewport` (the vertical axis is flipped there). The floor-plan layer
+(`smart_trolley_sim/floorplan.py`) draws a muted supermarket shell under the
+navigation overlays — walls, shelf racks, checkout counter, entrance and parking
+bay — so the graph reads as a store aisle network. It is purely visual and never
+feeds the planner.
 
 ## 4. Controls
 
@@ -294,20 +299,20 @@ From `python simulator/main.py --headless --all` on the default configuration
 
 | Scenario | State | Time (s) | Travelled (m) | Efficiency (%) | Mean / max XTE (m) | Dest. err (m) | Replans |
 |---|---|---|---|---|---|---|---|
-| 1 basic navigation | ARRIVED | 30.2 | 11.48 | 98.5 | 0.11 / 0.28 | 0.11 | 0 |
-| 2 long route | ARRIVED | 32.9 | 12.98 | 100.2 | 0.11 / 0.25 | 0.13 | 0 |
-| 3 multiple turns | ARRIVED | 34.1 | 12.91 | 100.8 | 0.10 / 0.28 | 0.13 | 0 |
+| 1 basic navigation | ARRIVED | 30.2 | 11.49 | 98.4 | 0.11 / 0.28 | 0.11 | 0 |
+| 2 long route | ARRIVED | 32.8 | 12.98 | 100.2 | 0.10 / 0.25 | 0.15 | 0 |
+| 3 multiple turns | ARRIVED | 33.9 | 13.08 | 99.4 | 0.12 / 0.24 | 0.10 | 0 |
 | 4 moderate uwb noise | ARRIVED | 30.2 | 11.66 | 96.9 | 0.16 / 0.39 | 0.06 | 0 |
-| 5 high uwb noise | ARRIVED | 32.6 | 11.90 | 95.0 | 0.21 / 0.56 | 0.14 | 0 |
-| 6 position dropout | ARRIVED | 30.3 | 11.51 | 98.2 | 0.14 / 0.32 | 0.09 | 0 |
+| 5 high uwb noise | ARRIVED | 32.6 | 11.90 | 95.0 | 0.20 / 0.55 | 0.14 | 0 |
+| 6 position dropout | ARRIVED | 29.6 | 11.44 | 98.8 | 0.13 / 0.32 | 0.16 | 0 |
 | 7 low quality position | ARRIVED | 32.9 | 11.43 | 98.9 | 0.11 / 0.32 | 0.16 | 0 |
-| 8 position jump | ARRIVED | 32.8 | 12.14 | 93.1 | 0.20 / 1.58 | 0.14 | 2 |
-| 9 route deviation | ARRIVED | 30.7 | 13.45 | 84.0 | 0.17 / 1.72 | 0.13 | 1 |
-| 10 destination change | ARRIVED | 25.6 | 10.48 | 107.9 | 0.13 / 0.32 | 0.16 | 1 |
+| 8 position jump | ARRIVED | 32.8 | 12.12 | 93.3 | 0.19 / 1.58 | 0.14 | 2 |
+| 9 route deviation | ARRIVED | 30.7 | 13.45 | 84.1 | 0.17 / 1.72 | 0.13 | 1 |
+| 10 destination change | ARRIVED | 26.3 | 10.61 | 106.5 | 0.13 / 0.32 | 0.08 | 1 |
 | 11 unreachable destination (drill) | ERROR | 0.0 | 0.00 | — | — | — | 0 |
-| 12 emergency stop | ARRIVED | 32.6 | 11.46 | 93.4 | 0.14 / 0.32 | 0.10 | 0 |
-| 13 invalid samples | ARRIVED | 30.2 | 11.55 | 97.9 | 0.14 / 0.33 | 0.09 | 0 |
-| 14 frozen position | ARRIVED | 29.9 | 11.51 | 98.2 | 0.13 / 0.32 | 0.16 | 0 |
+| 12 emergency stop | ARRIVED | 32.6 | 11.48 | 93.2 | 0.13 / 0.32 | 0.09 | 0 |
+| 13 invalid samples | ARRIVED | 30.2 | 11.55 | 97.9 | 0.13 / 0.34 | 0.09 | 0 |
+| 14 frozen position | ARRIVED | 29.9 | 11.49 | 98.4 | 0.13 / 0.32 | 0.16 | 0 |
 <!-- END GENERATED REFERENCE TABLE -->
 
 Reading the table:

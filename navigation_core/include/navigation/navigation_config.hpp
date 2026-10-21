@@ -133,6 +133,7 @@ struct NavigationConfig {
         heading_pid.kp = motion.heading_kp;
         heading_pid.ki = 0.0f;
         heading_pid.kd = 0.05f;
+        heading_pid.circular = true;  // heading is an angle: use shortest-path error
         heading_pid.output_min = -motion.max_angular_speed_radps;
         heading_pid.output_max = motion.max_angular_speed_radps;
         heading_pid.integral_min = -1.0f;

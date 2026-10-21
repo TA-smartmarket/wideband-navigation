@@ -847,8 +847,11 @@ bool navigationConfigAccepted(const char* text, char* error, std::size_t error_s
 
 static void test_load_navigation_config_text() {
     const char* text = R"({
-      "position": {"minimum_quality": 0.7, "timeout_ms": 500},
-      "path": {"waypoint_tolerance_m": 0.25, "replan_cross_track_error_m": 0.8},
+      "position": {"minimum_quality": 0.7, "timeout_ms": 500,
+                   "heading_correction_gain": 0.2,
+                   "heading_quality_baseline_boost": 3.0},
+      "path": {"waypoint_tolerance_m": 0.25, "replan_cross_track_error_m": 0.8,
+               "replan_max_graph_snap_distance_m": 3.0},
       "motion": {"max_linear_speed_mps": 0.5, "max_angular_speed_radps": 1.2},
       "robot": {"wheel_base_m": 0.30},
       "control": {"navigation_rate_hz": 25.0}
@@ -858,8 +861,11 @@ static void test_load_navigation_config_text() {
     TEST_ASSERT_TRUE(loadNavigationConfig(text, config, error, sizeof(error)));
     TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.7f, config.position.minimum_quality);
     TEST_ASSERT_EQUAL_UINT32(500, config.position.timeout_ms);
+    TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.2f, config.position.heading_correction_gain);
+    TEST_ASSERT_FLOAT_WITHIN(1e-6f, 3.0f, config.position.heading_quality_baseline_boost);
     TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.25f, config.path.waypoint_tolerance_m);
     TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.8f, config.path.replan_cross_track_error_m);
+    TEST_ASSERT_FLOAT_WITHIN(1e-6f, 3.0f, config.path.replan_max_graph_snap_distance_m);
     TEST_ASSERT_FLOAT_WITHIN(1e-6f, 0.30f, config.drive.wheel_base_m);
     TEST_ASSERT_FLOAT_WITHIN(1e-6f, 25.0f, config.control.navigation_rate_hz);
 
@@ -869,6 +875,11 @@ static void test_load_navigation_config_text() {
         navigationConfigAccepted("{\"robot\":{\"wheel_base_m\":0}}", failure, sizeof(failure)));
     TEST_ASSERT_TRUE(std::strlen(failure) > 0);
     TEST_ASSERT_FALSE(navigationConfigAccepted("{\"position\":{\"minimum_quality\":5}}", nullptr, 0));
+    TEST_ASSERT_FALSE(navigationConfigAccepted(
+        "{\"position\":{\"heading_correction_gain\":1.1}}", nullptr, 0));
+    TEST_ASSERT_FALSE(navigationConfigAccepted(
+        "{\"path\":{\"max_graph_snap_distance_m\":2.0,"
+        "\"replan_max_graph_snap_distance_m\":1.0}}", nullptr, 0));
     TEST_ASSERT_FALSE(navigationConfigAccepted(
         "{\"path\":{\"max_cross_track_error_m\":0.6,\"replan_cross_track_error_m\":0.4}}",
         nullptr, 0));

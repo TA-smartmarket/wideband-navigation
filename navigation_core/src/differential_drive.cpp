@@ -33,8 +33,7 @@ float wheelAngularVelocity(float linear_velocity_mps, float wheel_radius_m) {
     return linear_velocity_mps / wheel_radius_m;
 }
 
-MotorCommand wheelVelocitiesToCommands(const WheelVelocities& wheels,
-                                       const DifferentialDriveConfig& config) {
+MotorCommand wheelVelocitiesToCommands(const WheelVelocities& wheels, const DifferentialDriveConfig& config) {
     MotorCommand command;
     const float max_speed = config.max_wheel_speed_mps;
     if (!isFinite(max_speed) || max_speed <= 1.0e-6f) {
@@ -48,10 +47,8 @@ MotorCommand wheelVelocitiesToCommands(const WheelVelocities& wheels,
     command.right = clampf(right / max_speed, -1.0f, 1.0f);
 
     // Per-side gain trim compensates a real motor/gearbox mismatch.
-    command.left = clampf(command.left * (isFinite(config.left_gain) ? config.left_gain : 1.0f),
-                          -1.0f, 1.0f);
-    command.right = clampf(command.right * (isFinite(config.right_gain) ? config.right_gain : 1.0f),
-                           -1.0f, 1.0f);
+    command.left = clampf(command.left * (isFinite(config.left_gain) ? config.left_gain : 1.0f), -1.0f, 1.0f);
+    command.right = clampf(command.right * (isFinite(config.right_gain) ? config.right_gain : 1.0f), -1.0f, 1.0f);
 
     // Deadband: commands that cannot overcome static friction are zeroed so the
     // controller does not sit in a buzzing half-on state.

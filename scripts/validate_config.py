@@ -179,8 +179,12 @@ def validate_navigation(document: dict, map_info: dict) -> dict:
     _require(baseline >= 0.0, "navigation.json: position.heading_min_displacement_m must be >= 0")
     if "heading_correction_gain" in position:
         gain = _number(position, "heading_correction_gain", "navigation.json position")
-        _require(0.0 < gain <= 1.0,
-                 "navigation.json: position.heading_correction_gain must be in (0, 1]")
+        _require(0.0 <= gain <= 1.0,
+                 "navigation.json: position.heading_correction_gain must be in [0, 1]")
+    if "heading_quality_baseline_boost" in position:
+        boost = _number(position, "heading_quality_baseline_boost", "navigation.json position")
+        _require(boost >= 0.0,
+                 "navigation.json: position.heading_quality_baseline_boost must be >= 0")
 
     path = document.get("path", {})
     snap = _number(path, "max_graph_snap_distance_m", "navigation.json path")

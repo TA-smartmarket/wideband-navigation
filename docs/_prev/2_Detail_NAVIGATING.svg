@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2300" width="1600" height="2300" font-family="Helvetica,Arial">
+<rect width="1600" height="2300" fill="#ffffff"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+<line x1="800.0" y1="150.0" x2="800.0" y2="200.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="980.0" y1="250.0" x2="1120.0" y2="245.0" stroke="#CA6F1E" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1050" y="248" font-size="11" fill="#CA6F1E" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="300.0" x2="800.0" y2="360.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="330" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="980.0" y1="410.0" x2="1120.0" y2="395.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1050" y="402" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="460.0" x2="800.0" y2="520.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="490" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="600.0" x2="800.0" y2="650.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="730.0" x2="800.0" y2="780.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="830.0" x2="1120.0" y2="820.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="825" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="880.0" x2="800.0" y2="930.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="905" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="1020.0" x2="800.0" y2="1070.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="1115.0" x2="1120.0" y2="1105.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="1110" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="1160.0" x2="800.0" y2="1210.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="1185" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="1280.0" x2="800.0" y2="1330.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="1375.0" x2="1120.0" y2="1365.0" stroke="#CA6F1E" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="1370" font-size="11" fill="#CA6F1E" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="1420.0" x2="800.0" y2="1470.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="1445" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="970.0" y1="1515.0" x2="1120.0" y2="1510.0" stroke="#CA6F1E" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="1512" font-size="11" fill="#CA6F1E" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="1560.0" x2="800.0" y2="1610.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="1585" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="1270.0" y1="1550.0" x2="800.0" y2="1610.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="1700.0" x2="800.0" y2="1750.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="1840.0" x2="800.0" y2="1900.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="1945.0" x2="1120.0" y2="1945.0" stroke="#8E44AD" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="1945" font-size="11" fill="#8E44AD" text-anchor="middle" dy="-3">YA</text>
+<line x1="800.0" y1="1990.0" x2="800.0" y2="2050.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="2020" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="1280.0" y1="1990.0" x2="800.0" y2="2050.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="2120.0" x2="800.0" y2="2170.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<g fill="none" stroke="none" stroke-width="1.5">
+<rect x="420.0" y="20.0" width="860.0" height="40.0"/>
+</g>
+<text x="850" y="40" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="850" dy="0">DETAIL — SUBROUTINE NAVIGATING (follower → PID → differential drive → motor)</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="620.0" y="80.0" width="360.0" height="70.0"/>
+</g>
+<text x="800" y="108" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">MASUK: NAVIGATING</tspan>
+<tspan x="800" dy="15.0">(20 Hz, motor aktif)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="200.0" width="360.0" height="100.0"/>
+</g>
+<text x="800" y="242" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">stop / replan</tspan>
+<tspan x="800" dy="15.0">diminta?</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<rect x="1120.0" y="200.0" width="300.0" height="90.0"/>
+</g>
+<text x="1270" y="222" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">stop → IDLE</tspan>
+<tspan x="1270" dy="15.0">replan → REPLANNING</tspan>
+<tspan x="1270" dy="15.0">zeroMotion terlebih</tspan>
+<tspan x="1270" dy="15.0">dahulu</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="360.0" width="360.0" height="100.0"/>
+</g>
+<text x="800" y="402" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">posisi fresh?</tspan>
+<tspan x="800" dy="15.0">(now − last ≤ timeout)</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="1120.0" y="360.0" width="300.0" height="70.0"/>
+</g>
+<text x="1270" y="388" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">zeroMotion →</tspan>
+<tspan x="1270" dy="15.0">POSITION_LOST</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="590.0" y="520.0" width="420.0" height="80.0"/>
+</g>
+<text x="800" y="546" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">follower.updateHeading(posisi)</tspan>
+<tspan x="800" dy="13.75">estimasi &amp; koreksi heading dari pergeseran</tspan>
+<tspan x="800" dy="13.75">(baseline membesar jika quality turun)</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="590.0" y="650.0" width="420.0" height="80.0"/>
+</g>
+<text x="800" y="676" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">waypoints.update(posisi)</tspan>
+<tspan x="800" dy="13.75">cek waypoint tercapai · maju otomatis</tspan>
+<tspan x="800" dy="13.75">cek destination_reached</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="780.0" width="340.0" height="100.0"/>
+</g>
+<text x="800" y="822" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">destination</tspan>
+<tspan x="800" dy="15.0">tercapai?</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="1120.0" y="780.0" width="300.0" height="80.0"/>
+</g>
+<text x="1270" y="805" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">zeroMotion +</tspan>
+<tspan x="1270" dy="15.0">clearTrackingTelemetry</tspan>
+<tspan x="1270" dy="15.0">→ ARRIVED</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="580.0" y="930.0" width="440.0" height="90.0"/>
+</g>
+<text x="800" y="961" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">follower.update()</tspan>
+<tspan x="800" dy="13.75">hitung bearing target · heading error · cross-track</tspan>
+<tspan x="800" dy="13.75">computeTwist(): PID → ω (saturasi) · speed policy → v</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1070.0" width="340.0" height="90.0"/>
+</g>
+<text x="800" y="1108" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">output valid?</tspan>
+<tspan x="800" dy="15.0">(twist finite)</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="1120.0" y="1070.0" width="300.0" height="70.0"/>
+</g>
+<text x="1270" y="1098" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">zeroMotion</tspan>
+<tspan x="1270" dy="15.0">(pertahankan stop)</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="590.0" y="1210.0" width="420.0" height="70.0"/>
+</g>
+<text x="800" y="1238" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">deviation.update(cross_track_error)</tspan>
+<tspan x="800" dy="15.0">monitor deviasi dari koridor</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1330.0" width="340.0" height="90.0"/>
+</g>
+<text x="800" y="1368" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">deviasi terkonfirmasi</tspan>
+<tspan x="800" dy="15.0">(&gt; durasi)?</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<rect x="1120.0" y="1330.0" width="300.0" height="70.0"/>
+</g>
+<text x="1270" y="1358" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">zeroMotion →</tspan>
+<tspan x="1270" dy="15.0">REPLANNING</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1470.0" width="340.0" height="90.0"/>
+</g>
+<text x="800" y="1508" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">melebihi soft limit?</tspan>
+<tspan x="800" dy="15.0">(belum konfirmasi)</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<rect x="1120.0" y="1470.0" width="300.0" height="80.0"/>
+</g>
+<text x="1270" y="1495" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">kecilkan kecepatan linear</tspan>
+<tspan x="1270" dy="15.0">(tetap jalan pelan</tspan>
+<tspan x="1270" dy="15.0">sambil kumpulkan bukti)</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="580.0" y="1610.0" width="440.0" height="90.0"/>
+</g>
+<text x="800" y="1641" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">twistToMotorCommand()</tspan>
+<tspan x="800" dy="13.75">v, ω → differential drive → left/right</tspan>
+<tspan x="800" dy="13.75">clamp ±1 · deadband · trim gain · slew-rate limit</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="580.0" y="1750.0" width="440.0" height="90.0"/>
+</g>
+<text x="800" y="1781" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">status_.motor = output</tspan>
+<tspan x="800" dy="13.75">telemetry: heading, error, jarak,</tspan>
+<tspan x="800" dy="13.75">cross-track, linear/angular velocity</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1900.0" width="340.0" height="90.0"/>
+</g>
+<text x="800" y="1938" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">rotate in place</tspan>
+<tspan x="800" dy="15.0">aktif?</tspan>
+</text>
+<g fill="#E8DAEF" stroke="#8E44AD" stroke-width="1.5">
+<rect x="1120.0" y="1900.0" width="320.0" height="90.0"/>
+</g>
+<text x="1280" y="1931" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1280" dy="0">v = 0 · hanya putar di tempat</tspan>
+<tspan x="1280" dy="13.75">(ω dari PID, hysteresis masuk</tspan>
+<tspan x="1280" dy="13.75">vs keluar untuk U-turn)</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="580.0" y="2050.0" width="440.0" height="70.0"/>
+</g>
+<text x="800" y="2071" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">Safety gate firmware:</tspan>
+<tspan x="800" dy="13.75">NAVIGATING &amp;&amp; !estop → motors.setBoth(left, right)</tspan>
+<tspan x="800" dy="13.75">selain itu → motors.stop()</tspan>
+</text>
+<g fill="#D5F5E3" stroke="#27AE60" stroke-width="1.5">
+<rect x="620.0" y="2170.0" width="360.0" height="70.0"/>
+</g>
+<text x="800" y="2198" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">KELUAR: kembali ke loop</tspan>
+<tspan x="800" dy="15.0">5 Hz telemetry · siklus berikutnya</tspan>
+</text>
+</svg>

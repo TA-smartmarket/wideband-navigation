@@ -157,11 +157,10 @@ PathResult dijkstra(const Graph& graph, int start_node_id, int destination_node_
             // equal-length optimal routes, and without this rule the chosen route
             // would depend on binary-heap pop order (i.e. on insertion order).
             const int candidate_predecessor_id = graph.nodeIdAtIndex(u);
-            const int current_predecessor_id =
-                previous[v] >= 0 ? graph.nodeIdAtIndex(previous[v]) : -1;
+            const int current_predecessor_id = previous[v] >= 0 ? graph.nodeIdAtIndex(previous[v]) : -1;
             const bool better = candidate < dist[v];
-            const bool equal_but_preferred = candidate == dist[v] && previous[v] >= 0 &&
-                                             candidate_predecessor_id < current_predecessor_id;
+            const bool equal_but_preferred =
+                candidate == dist[v] && previous[v] >= 0 && candidate_predecessor_id < current_predecessor_id;
             if (better || equal_but_preferred) {
                 dist[v] = candidate;
                 previous[v] = u;
@@ -197,10 +196,7 @@ PathResult dijkstra(const Graph& graph, int start_node_id, int destination_node_
     return result;
 }
 
-int pathToWaypoints(const Graph& graph,
-                    const PathResult& path,
-                    Waypoint* out_waypoints,
-                    int max_waypoints) {
+int pathToWaypoints(const Graph& graph, const PathResult& path, Waypoint* out_waypoints, int max_waypoints) {
     if (out_waypoints == nullptr || max_waypoints <= 0 || !path.success) {
         return 0;
     }
@@ -231,8 +227,7 @@ float polylineLength(const Waypoint* waypoints, int count) {
     return total;
 }
 
-float distanceToSegment(const Position2D& position, const Waypoint* waypoints, int count,
-                        int segment_index) {
+float distanceToSegment(const Position2D& position, const Waypoint* waypoints, int count, int segment_index) {
     if (waypoints == nullptr || segment_index < 0 || segment_index + 1 >= count) {
         return 0.0f;
     }

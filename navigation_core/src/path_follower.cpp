@@ -117,9 +117,17 @@ void PathFollower::updateHeading(const Position2D& position, float position_qual
     // through the commanded yaw rate: the displacement it produces is
     // *tangential* to the arc, so `atan2(dy, dx)` would be ~90 deg away from the
     // real heading.  Applying such a correction makes the follower rotate
-    // forever (a limit cycle around the waypoint).  In this mode the estimate is
-    // therefore left entirely to dead reckoning and the reference point is kept.
+    // forever (a limit cycle around the waypoint).
+    //
+    // The reference point must be re-anchored every cycle while rotating, not
+    // frozen: the turn's own (tangential) displacement and any residual forward
+    // bleed would otherwise accumulate against a stale reference, so the first
+    // correction after the turn measures the whole arc instead of genuine
+    // forward travel and can jump the estimate tens of degrees.  Re-anchoring
+    // discards that tangential motion frame by frame; the first trusted
+    // correction after the turn is then measured from the turn's end position.
     if (rotate_in_place_active_) {
+        previous_position_ = position;
         return;
     }
 
@@ -344,7 +352,21 @@ PathFollowerOutput PathFollower::update(const Position2D& position,
     // tracking error, otherwise the deadband would flatter the numbers.
     const float deadband_scale = headingDeadbandScale(output.heading_error_rad);
     const float error_deg = std::fabs(output.heading_error_rad) * kRadToDeg;
-    output.rotate_in_place = error_deg >= config_.motion.rotate_in_place_threshold_deg;
+    // Rotate-in-place hysteresis: enter the rotation when the error exceeds the
+    // configured threshold, but stay in it until the error drops into the cruise
+    // band (heading_error_slow_deg).  Without the latch the follower flips back
+    // to translation the instant the *estimated* error crosses the threshold,
+    // but that estimate leads the true heading by the motor/estimator lag, so it
+    // starts translating with a still-large real error: the trolley traces a
+    // wide arc and re-enters rotation around a ~180 deg turn.  Latching until
+    // the error is genuinely small makes a U-turn complete on the spot instead.
+    const float turn_entry_deg = config_.motion.rotate_in_place_threshold_deg;
+    const float turn_release_deg = config_.motion.heading_error_slow_deg;
+    if (rotate_in_place_active_) {
+        output.rotate_in_place = error_deg >= turn_release_deg;
+    } else {
+        output.rotate_in_place = error_deg >= turn_entry_deg;
+    }
     // Remember the mode for the next heading correction (updateHeading runs
     // before this function in the control cycle).
     rotate_in_place_active_ = output.rotate_in_place;

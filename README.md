@@ -108,7 +108,10 @@ smart-trolley-navigation/
 | Optional | `pyserial` (for the hardware-in-the-loop mock position generator) |
 
 Windows: install [MSYS2](https://www.msys2.org/) for `g++` (the build script also
-finds it automatically at `C:\msys64\ucrt64\bin\g++.exe`). All commands below are
+finds it automatically at `C:\msys64\ucrt64\bin\g++.exe`), or use the lighter
+self-contained [w64devkit](https://github.com/skeeto/w64devkit/releases) — a
+portable g++ 16 toolchain with no installer, just extract it and point `CXX` at
+`w64devkit\bin\g++.exe`. All commands below are
 Windows-friendly; serial ports are `COM3`, `COM4`, `COM5`, ….
 
 ## 5. Quick start
@@ -317,7 +320,7 @@ Key navigation parameters:
 | `motion.max_linear_speed_mps` | 0.45 | cruise speed |
 | `motion.rotate_in_place_threshold_deg` | 55 | heading error that switches to spin-in-place |
 | `motion.max_angular_speed_radps` | 2.2 | yaw-rate ceiling; the dominant corner-tracking limit |
-| `motion.heading_deadband_deg` | 1.5 | taper the angular command inside this error (straight-line stability) |
+| `motion.heading_deadband_deg` | 5.0 | taper the angular command inside this error (straight-line stability) |
 | `motion.max_motor_command_change_per_s` | 6.0 | wheel-command slew limit (0 disables) |
 | `path.destination_slowdown_distance_m` | 0.60 | final-approach speed taper |
 | `drive_kind` | `stepper` | `stepper` (NEMA 17 + A4988) or `pwm_h_bridge` |
@@ -444,7 +447,7 @@ Implemented and verified: navigation core, Dijkstra, waypoint tracking, PID,
 differential drive, navigation FSM, replanning, position-loss safety, emergency
 stop, telemetry, console commands, ESP32-S3 firmware, mock and real position
 provider abstraction, desktop simulator, UWB fault simulation, metrics, CSV/JSON
-export, unit tests and integration tests (111 passing), PlatformIO build for both
+export, unit tests and integration tests (113 passing), PlatformIO build for both
 firmware environments, and this documentation set.
 
 Hardware-dependent (structure complete, needs the real device): motor direction

@@ -36,7 +36,9 @@ float PIDController::update(float setpoint, float measurement, float dt_s) {
     }
 
     const float dt = sanitizeDt(dt_s);
-    const float error = setpoint - measurement;
+    const float error =
+        config_.circular ? shortestAngularDistance(measurement, setpoint)
+                         : setpoint - measurement;
 
     p_term_ = config_.kp * error;
 
@@ -44,7 +46,12 @@ float PIDController::update(float setpoint, float measurement, float dt_s) {
     // growth) with a first-order low-pass filter.
     float derivative_raw = 0.0f;
     if (has_previous_) {
-        derivative_raw = -(measurement - previous_measurement_) / dt;
+        if (config_.circular) {
+            derivative_raw =
+                -shortestAngularDistance(previous_measurement_, measurement) / dt;
+        } else {
+            derivative_raw = -(measurement - previous_measurement_) / dt;
+        }
     }
     const float alpha = clampf(config_.derivative_filter_alpha, 0.0f, 1.0f);
     filtered_derivative_ = alpha * derivative_raw + (1.0f - alpha) * filtered_derivative_;

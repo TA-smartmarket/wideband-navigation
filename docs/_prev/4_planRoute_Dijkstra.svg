@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2200" width="1600" height="2200" font-family="Helvetica,Arial">
+<rect width="1600" height="2200" fill="#ffffff"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+<line x1="260.0" y1="190.0" x2="260.0" y2="230.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="260.0" y1="290.0" x2="260.0" y2="330.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="260.0" y1="400.0" x2="260.0" y2="440.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="420.0" y1="480.0" x2="430.0" y2="260.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="425" y="370" font-size="11" fill="#2E86C1" text-anchor="middle" dy="-3">belum</text>
+<line x1="260.0" y1="520.0" x2="260.0" y2="560.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="260" y="540" font-size="11" fill="#2E86C1" text-anchor="middle" dy="-3">ya</text>
+<line x1="260.0" y1="630.0" x2="260.0" y2="670.0" stroke="#2E86C1" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="140.0" x2="780.0" y2="190.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="270.0" x2="780.0" y2="320.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="295" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="400.0" x2="780.0" y2="450.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="425" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="530.0" x2="780.0" y2="580.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="555" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="670.0" x2="780.0" y2="720.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="800.0" x2="780.0" y2="850.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="825" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="950.0" x2="780.0" y2="1000.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="1080.0" x2="780.0" y2="1130.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="1105" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="1210.0" x2="780.0" y2="1260.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="1340.0" x2="780.0" y2="1390.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="780" y="1365" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="780.0" y1="1470.0" x2="780.0" y2="1520.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="780.0" y1="1600.0" x2="780.0" y2="1650.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="940.0" y1="230.0" x2="1080.0" y2="416.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="323" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="940.0" y1="360.0" x2="1080.0" y2="452.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="406" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="940.0" y1="490.0" x2="1080.0" y2="488.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="489" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="940.0" y1="760.0" x2="1080.0" y2="524.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="642" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="940.0" y1="1040.0" x2="1080.0" y2="560.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="800" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="940.0" y1="1300.0" x2="1080.0" y2="596.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1010" y="948" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<g fill="none" stroke="none" stroke-width="1.5">
+<rect x="420.0" y="20.0" width="800.0" height="40.0"/>
+</g>
+<text x="820" y="40" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="820" dy="0">DETAIL — SUBROUTINE planRoute() + ALGORITMA DIJKSTRA</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="600.0" y="80.0" width="360.0" height="60.0"/>
+</g>
+<text x="780" y="110" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">MASUK: planRoute(is_replan)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="190.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="230" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">graph tersedia?</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="320.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="360" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">destination_node ≥ 0?</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="450.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="482" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">has_position (ada</tspan>
+<tspan x="780" dy="15.0">posisi valid)?</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="550.0" y="580.0" width="460.0" height="90.0"/>
+</g>
+<text x="780" y="611" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="780" dy="0">snap = findNearestNode(filtered_position, snap_limit)</tspan>
+<tspan x="780" dy="13.75">· plan awal → max_graph_snap_distance_m</tspan>
+<tspan x="780" dy="13.75">· replan → replan_max_graph_snap_distance_m (lebih lebar)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="720.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="760" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">snap.found?</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<rect x="1030.0" y="720.0" width="360.0" height="110.0" rx="14" ry="14"/>
+</g>
+<text x="1210" y="754" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1210" dy="0">Kasus replan: node terdekat bisa sudah</tspan>
+<tspan x="1210" dy="13.75">terlewati (trolley berbalik-mundur).</tspan>
+<tspan x="1210" dy="13.75">Jika node ada di belakang rute,</tspan>
+<tspan x="1210" dy="13.75">santap ulang ke node TERDEKAT DI DEPAN.</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="560.0" y="850.0" width="440.0" height="100.0" rx="6"/><line x1="570.0" y1="850.0" x2="570.0" y2="950.0" stroke="inherit"/><line x1="990.0" y1="850.0" x2="990.0" y2="950.0" stroke="inherit"/>
+</g>
+<text x="780" y="886" font-size="11" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">path = dijkstra(graph, snap.node_id, destination)</tspan>
+<tspan x="780" dy="13.75">min-heap · relax semua edge · mundur rekonstruksi</tspan>
+<tspan x="780" dy="13.75">ukur plan_time_us (nanodeteksi)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="1000.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="1040" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">path.success?</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="550.0" y="1130.0" width="460.0" height="80.0"/>
+</g>
+<text x="780" y="1163" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="780" dy="0">pathToWaypoints() → Waypoint[] (kMaxRouteNodes)</tspan>
+<tspan x="780" dy="13.75">skip start node jika trolley sudah di atasnya</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="1260.0" width="320.0" height="80.0"/>
+</g>
+<text x="780" y="1300" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">jumlah waypoint &gt; 0?</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="540.0" y="1390.0" width="480.0" height="80.0"/>
+</g>
+<text x="780" y="1423" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="780" dy="0">waypoints_.loadRoute() · snapToNearestWaypoint() · setEntryPoint()</tspan>
+<tspan x="780" dy="13.75">heading awal TIDAK di-seed (UWB tanpa yaw absolut)</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="530.0" y="1520.0" width="500.0" height="80.0"/>
+</g>
+<text x="780" y="1553" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="780" dy="0">telemetry: route[], route_length, start_node, planned_distance_m,</tspan>
+<tspan x="780" dy="13.75">remaining_distance_m · replan → replan_count++ · deviation_.reset()</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="600.0" y="1650.0" width="360.0" height="70.0"/>
+</g>
+<text x="780" y="1678" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="780" dy="0">SELESAI planRoute</tspan>
+<tspan x="780" dy="15.0">transitionTo(NAVIGATING)</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="1080.0" y="380.0" width="400.0" height="240.0"/>
+</g>
+<text x="1280" y="450" font-size="10" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1280" dy="0">GAGAL / ERROR</tspan>
+<tspan x="1280" dy="12.5">· graph null → GRAPH_INVALID</tspan>
+<tspan x="1280" dy="12.5">· destinasi &lt; 0 → INVALID_DESTINATION</tspan>
+<tspan x="1280" dy="12.5">· tanpa posisi → INVALID_POSITION</tspan>
+<tspan x="1280" dy="12.5">· snap tidak ketemu → START_NODE_NOT_FOUND</tspan>
+<tspan x="1280" dy="12.5">· tidak ada rute → ROUTE_NOT_FOUND</tspan>
+<tspan x="1280" dy="12.5"></tspan>
+<tspan x="1280" dy="12.5">setError() + zeroMotion() +</tspan>
+<tspan x="1280" dy="12.5">transitionTo(ERROR)</tspan>
+</text>
+<g fill="none" stroke="none" stroke-width="1.5">
+<rect x="90.0" y="80.0" width="300.0" height="30.0"/>
+</g>
+<text x="240" y="95" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="240" dy="0">ISI DIJKSTRA (ringkas)</tspan>
+</text>
+<g fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5">
+<rect x="90.0" y="120.0" width="340.0" height="70.0"/>
+</g>
+<text x="260" y="141" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="260" dy="0">init dist[] = ∞, dist[start]=0</tspan>
+<tspan x="260" dy="13.75">previous[] = -1, settled[] = false</tspan>
+<tspan x="260" dy="13.75">min-heap push(0, start)</tspan>
+</text>
+<g fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5">
+<rect x="90.0" y="230.0" width="340.0" height="60.0"/>
+</g>
+<text x="260" y="252" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="260" dy="0">selama heap tidak kosong:</tspan>
+<tspan x="260" dy="15.0">pop node dg jarak terkecil</tspan>
+</text>
+<g fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5">
+<rect x="90.0" y="330.0" width="340.0" height="70.0"/>
+</g>
+<text x="260" y="351" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="260" dy="0">untuk tiap tepi (tetangga):</tspan>
+<tspan x="260" dy="13.75">relax → dist[neighbor] = min(...)</tspan>
+<tspan x="260" dy="13.75">push bila lebih pendek</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="100.0" y="440.0" width="320.0" height="80.0"/>
+</g>
+<text x="260" y="472" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="260" dy="0">tujuan settled?</tspan>
+<tspan x="260" dy="15.0">(atau heap habis)</tspan>
+</text>
+<g fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5">
+<rect x="90.0" y="560.0" width="340.0" height="70.0"/>
+</g>
+<text x="260" y="580" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="260" dy="0">rekonstruksi jalur</tspan>
+<tspan x="260" dy="15.0">mundur dari tujuan →</tspan>
+<tspan x="260" dy="15.0">reverse → node_ids[]</tspan>
+</text>
+<g fill="#D5F5E3" stroke="#27AE60" stroke-width="1.5">
+<rect x="110.0" y="670.0" width="300.0" height="70.0"/>
+</g>
+<text x="260" y="698" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="260" dy="0">hasil: success, jarak total,</tspan>
+<tspan x="260" dy="15.0">jumlah node (expanded_nodes)</tspan>
+</text>
+</svg>

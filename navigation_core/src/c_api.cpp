@@ -35,7 +35,9 @@ void setLastError(const char* message) {
     nav::copyBounded(g_last_error, sizeof(g_last_error), message == nullptr ? "" : message);
 }
 
-NavSession* asSession(nav_handle handle) { return static_cast<NavSession*>(handle); }
+NavSession* asSession(nav_handle handle) {
+    return static_cast<NavSession*>(handle);
+}
 
 /// Parse graph JSON into `graph`.  Returns false and fills `error` on failure.
 bool parseGraph(const char* graph_json, nav::Graph& graph, char* error, std::size_t error_size) {
@@ -46,25 +48,22 @@ bool parseGraph(const char* graph_json, nav::Graph& graph, char* error, std::siz
     return nav::loadGraph(graph_json, graph, error, error_size);
 }
 
-bool applyScene(const nav::Graph& base_graph, const char* scene_json, double clearance_m,
-                float expected_width_m, float expected_depth_m, nav::Graph& graph,
-                int& blocked_edges, char* error, std::size_t error_size) {
+bool applyScene(const nav::Graph& base_graph, const char* scene_json, double clearance_m, float expected_width_m,
+                float expected_depth_m, nav::Graph& graph, int& blocked_edges, char* error, std::size_t error_size) {
     if (scene_json == nullptr) {
         graph = base_graph;
         blocked_edges = 0;
         return true;
     }
     nav::SceneObstacles obstacles;
-    if (!nav::loadSceneObstacles(scene_json, obstacles, error, error_size)) return false;
-    if ((expected_width_m > 0.0f &&
-         std::fabs(obstacles.room_width_m - expected_width_m) > 1.0e-3f) ||
-        (expected_depth_m > 0.0f &&
-         std::fabs(obstacles.room_depth_m - expected_depth_m) > 1.0e-3f)) {
+    if (!nav::loadSceneObstacles(scene_json, obstacles, error, error_size))
+        return false;
+    if ((expected_width_m > 0.0f && std::fabs(obstacles.room_width_m - expected_width_m) > 1.0e-3f) ||
+        (expected_depth_m > 0.0f && std::fabs(obstacles.room_depth_m - expected_depth_m) > 1.0e-3f)) {
         std::snprintf(error, error_size, "scene: room dimensions do not match navigation map");
         return false;
     }
-    blocked_edges = nav::filterGraphByObstacles(
-        base_graph, obstacles, static_cast<float>(clearance_m), graph);
+    blocked_edges = nav::filterGraphByObstacles(base_graph, obstacles, static_cast<float>(clearance_m), graph);
     if (blocked_edges < 0) {
         std::snprintf(error, error_size, "scene: clearance must be finite and >= 0");
         return false;
@@ -80,8 +79,8 @@ nav_handle nav_create(const char* graph_json, const char* config_json) {
     return nav_create_with_scene(graph_json, config_json, nullptr, 0.0);
 }
 
-nav_handle nav_create_with_scene(const char* graph_json, const char* config_json,
-                                 const char* scene_json, double obstacle_clearance_m) {
+nav_handle nav_create_with_scene(const char* graph_json, const char* config_json, const char* scene_json,
+                                 double obstacle_clearance_m) {
     setLastError("");
     auto* session = new (std::nothrow) NavSession();
     if (session == nullptr) {
@@ -106,9 +105,8 @@ nav_handle nav_create_with_scene(const char* graph_json, const char* config_json
     session->config = config;
 
     int blocked_edges = 0;
-    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m,
-                    config.map_width_m, config.map_height_m, session->graph,
-                    blocked_edges, error, sizeof(error))) {
+    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m, config.map_width_m, config.map_height_m,
+                    session->graph, blocked_edges, error, sizeof(error))) {
         setLastError(error);
         delete session;
         return nullptr;
@@ -123,9 +121,13 @@ nav_handle nav_create_with_scene(const char* graph_json, const char* config_json
     return session;
 }
 
-void nav_destroy(nav_handle handle) { delete asSession(handle); }
+void nav_destroy(nav_handle handle) {
+    delete asSession(handle);
+}
 
-const char* nav_last_error(void) { return g_last_error; }
+const char* nav_last_error(void) {
+    return g_last_error;
+}
 
 int nav_request_destination(nav_handle handle, int node_id) {
     NavSession* session = asSession(handle);
@@ -196,9 +198,8 @@ int nav_apply_scene(nav_handle handle, const char* scene_json, double obstacle_c
     nav::Graph filtered;
     int blocked_edges = 0;
     char error[NAV_MAX_ERROR_LEN] = {};
-    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m,
-                    session->config.map_width_m, session->config.map_height_m,
-                    filtered, blocked_edges, error, sizeof(error))) {
+    if (!applyScene(session->base_graph, scene_json, obstacle_clearance_m, session->config.map_width_m,
+                    session->config.map_height_m, filtered, blocked_edges, error, sizeof(error))) {
         setLastError(error);
         return -1;
     }
@@ -213,8 +214,7 @@ int nav_apply_scene(nav_handle handle, const char* scene_json, double obstacle_c
     return blocked_edges;
 }
 
-int nav_submit_position(nav_handle handle, double x_m, double y_m, double quality,
-                        uint64_t timestamp_ms, int valid) {
+int nav_submit_position(nav_handle handle, double x_m, double y_m, double quality, uint64_t timestamp_ms, int valid) {
     NavSession* session = asSession(handle);
     if (session == nullptr) {
         return static_cast<int>(nav::MeasurementStatus::NO_DATA);
@@ -303,14 +303,12 @@ int nav_get_status(nav_handle handle, nav_status* out) {
     return 1;
 }
 
-int nav_get_telemetry_json(nav_handle handle, const char* trolley_id, uint64_t timestamp_ms,
-                           char* out, int out_size) {
+int nav_get_telemetry_json(nav_handle handle, const char* trolley_id, uint64_t timestamp_ms, char* out, int out_size) {
     NavSession* session = asSession(handle);
     if (session == nullptr || out == nullptr || out_size <= 0) {
         return 0;
     }
-    return nav::statusToJson(session->fsm.status(), trolley_id, timestamp_ms, out,
-                             static_cast<std::size_t>(out_size));
+    return nav::statusToJson(session->fsm.status(), trolley_id, timestamp_ms, out, static_cast<std::size_t>(out_size));
 }
 
 int nav_get_status_text(nav_handle handle, const char* trolley_id, char* out, int out_size) {
@@ -318,19 +316,17 @@ int nav_get_status_text(nav_handle handle, const char* trolley_id, char* out, in
     if (session == nullptr || out == nullptr || out_size <= 0) {
         return 0;
     }
-    return nav::statusToText(session->fsm.status(), trolley_id, out,
-                             static_cast<std::size_t>(out_size));
+    return nav::statusToText(session->fsm.status(), trolley_id, out, static_cast<std::size_t>(out_size));
 }
 
-int nav_plan_route(const char* graph_json, int start_node, int destination_node, int* out_nodes,
-                   int max_nodes, double* out_distance_m) {
-    return nav_plan_route_with_scene(graph_json, nullptr, 0.0, start_node, destination_node,
-                                     out_nodes, max_nodes, out_distance_m);
+int nav_plan_route(const char* graph_json, int start_node, int destination_node, int* out_nodes, int max_nodes,
+                   double* out_distance_m) {
+    return nav_plan_route_with_scene(graph_json, nullptr, 0.0, start_node, destination_node, out_nodes, max_nodes,
+                                     out_distance_m);
 }
 
-int nav_plan_route_with_scene(const char* graph_json, const char* scene_json,
-                              double obstacle_clearance_m, int start_node,
-                              int destination_node, int* out_nodes, int max_nodes,
+int nav_plan_route_with_scene(const char* graph_json, const char* scene_json, double obstacle_clearance_m,
+                              int start_node, int destination_node, int* out_nodes, int max_nodes,
                               double* out_distance_m) {
     setLastError("");
     nav::Graph base_graph;
@@ -341,8 +337,8 @@ int nav_plan_route_with_scene(const char* graph_json, const char* scene_json,
         return 0;
     }
     int blocked_edges = 0;
-    if (!applyScene(base_graph, scene_json, obstacle_clearance_m, 0.0f, 0.0f, graph,
-                    blocked_edges, error, sizeof(error))) {
+    if (!applyScene(base_graph, scene_json, obstacle_clearance_m, 0.0f, 0.0f, graph, blocked_edges, error,
+                    sizeof(error))) {
         setLastError(error);
         return 0;
     }
@@ -371,8 +367,7 @@ int nav_find_nearest_node(const char* graph_json, double x_m, double y_m, double
     nav::Position2D position;
     position.x_m = static_cast<float>(x_m);
     position.y_m = static_cast<float>(y_m);
-    const nav::NearestNodeResult result =
-        graph.findNearestNode(position, static_cast<float>(max_distance_m));
+    const nav::NearestNodeResult result = graph.findNearestNode(position, static_cast<float>(max_distance_m));
     return result.found ? result.node_id : -1;
 }
 
@@ -401,35 +396,34 @@ int nav_graph_edge_count(const char* graph_json) {
 // ---------------------------------------------------------------------------
 
 namespace {
-nav::StepperAxis* asAxis(nav_handle handle) { return static_cast<nav::StepperAxis*>(handle); }
+nav::StepperAxis* asAxis(nav_handle handle) {
+    return static_cast<nav::StepperAxis*>(handle);
+}
 
-nav::StepperConfig makeStepperConfig(int steps_per_revolution, int microsteps,
-                                     double wheel_radius_m, double max_step_rate_hz,
-                                     double max_step_accel_hz_per_s, int invert_direction) {
+nav::StepperConfig makeStepperConfig(int steps_per_revolution, int microsteps, double wheel_radius_m,
+                                     double max_step_rate_hz, double max_step_accel_hz_per_s, int invert_direction) {
     nav::StepperConfig config;
     config.steps_per_revolution = steps_per_revolution > 0 ? steps_per_revolution : 200;
     config.microsteps = microsteps >= 1 ? microsteps : 16;
     config.wheel_radius_m = static_cast<float>(wheel_radius_m > 0.0 ? wheel_radius_m : 0.05);
     config.max_step_rate_hz = static_cast<float>(max_step_rate_hz > 0.0 ? max_step_rate_hz : 20000.0);
-    config.max_step_accel_hz_per_s = static_cast<float>(
-        max_step_accel_hz_per_s > 0.0 ? max_step_accel_hz_per_s : config.max_step_rate_hz);
+    config.max_step_accel_hz_per_s =
+        static_cast<float>(max_step_accel_hz_per_s > 0.0 ? max_step_accel_hz_per_s : config.max_step_rate_hz);
     config.invert_direction = invert_direction != 0;
     return config;
 }
 }  // namespace
 
-nav_handle nav_stepper_create(int steps_per_revolution, int microsteps, double wheel_radius_m,
-                              double max_step_rate_hz, double max_step_accel_hz_per_s,
-                              int invert_direction) {
+nav_handle nav_stepper_create(int steps_per_revolution, int microsteps, double wheel_radius_m, double max_step_rate_hz,
+                              double max_step_accel_hz_per_s, int invert_direction) {
     setLastError("");
     auto* axis = new (std::nothrow) nav::StepperAxis();
     if (axis == nullptr) {
         setLastError("out of memory");
         return nullptr;
     }
-    const nav::StepperConfig config = makeStepperConfig(steps_per_revolution, microsteps,
-                                                       wheel_radius_m, max_step_rate_hz,
-                                                       max_step_accel_hz_per_s, invert_direction);
+    const nav::StepperConfig config = makeStepperConfig(steps_per_revolution, microsteps, wheel_radius_m,
+                                                        max_step_rate_hz, max_step_accel_hz_per_s, invert_direction);
     const nav::StepperValidation validation = nav::validateStepperConfig(config);
     if (!validation.valid) {
         setLastError(validation.message);
@@ -440,7 +434,9 @@ nav_handle nav_stepper_create(int steps_per_revolution, int microsteps, double w
     return axis;
 }
 
-void nav_stepper_destroy(nav_handle handle) { delete asAxis(handle); }
+void nav_stepper_destroy(nav_handle handle) {
+    delete asAxis(handle);
+}
 
 void nav_stepper_reset(nav_handle handle) {
     if (nav::StepperAxis* axis = asAxis(handle)) {
@@ -457,8 +453,7 @@ void nav_stepper_zero_position(nav_handle handle) {
 void nav_stepper_set_velocity(nav_handle handle, double velocity_mps) {
     if (nav::StepperAxis* axis = asAxis(handle)) {
         axis->setContinuousMode();
-        axis->setTargetRateHz(
-            nav::wheelVelocityToStepRate(static_cast<float>(velocity_mps), axis->config()));
+        axis->setTargetRateHz(nav::wheelVelocityToStepRate(static_cast<float>(velocity_mps), axis->config()));
     }
 }
 
@@ -534,13 +529,11 @@ unsigned long long nav_stepper_emitted_steps(nav_handle handle) {
 }
 
 int nav_stepper_steps_per_revolution(int steps_per_revolution, int microsteps) {
-    const nav::StepperConfig config =
-        makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
+    const nav::StepperConfig config = makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
     return nav::stepsPerRevolution(config);
 }
 
-double nav_stepper_steps_per_meter(int steps_per_revolution, int microsteps,
-                                   double wheel_radius_m) {
+double nav_stepper_steps_per_meter(int steps_per_revolution, int microsteps, double wheel_radius_m) {
     const nav::StepperConfig config =
         makeStepperConfig(steps_per_revolution, microsteps, wheel_radius_m, 20000.0, 20000.0, 0);
     return static_cast<double>(nav::stepsPerMeter(config));
@@ -550,19 +543,16 @@ double nav_stepper_velocity_to_rate(double velocity_mps, int steps_per_revolutio
                                     double wheel_radius_m) {
     const nav::StepperConfig config =
         makeStepperConfig(steps_per_revolution, microsteps, wheel_radius_m, 20000.0, 20000.0, 0);
-    return static_cast<double>(
-        nav::wheelVelocityToStepRate(static_cast<float>(velocity_mps), config));
+    return static_cast<double>(nav::wheelVelocityToStepRate(static_cast<float>(velocity_mps), config));
 }
 
 double nav_stepper_rate_to_rpm(double rate_hz, int steps_per_revolution, int microsteps) {
-    const nav::StepperConfig config =
-        makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
+    const nav::StepperConfig config = makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
     return static_cast<double>(nav::stepRateToRpm(static_cast<float>(rate_hz), config));
 }
 
 double nav_stepper_rpm_to_rate(double rpm, int steps_per_revolution, int microsteps) {
-    const nav::StepperConfig config =
-        makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
+    const nav::StepperConfig config = makeStepperConfig(steps_per_revolution, microsteps, 0.05, 20000.0, 20000.0, 0);
     return static_cast<double>(nav::rpmToStepRate(static_cast<float>(rpm), config));
 }
 

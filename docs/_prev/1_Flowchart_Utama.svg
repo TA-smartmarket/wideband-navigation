@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2500" width="1600" height="2500" font-family="Helvetica,Arial">
+<rect width="1600" height="2500" fill="#ffffff"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+<line x1="800.0" y1="140.0" x2="800.0" y2="200.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="370.0" x2="800.0" y2="440.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="500.0" x2="800.0" y2="570.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="660.0" x2="800.0" y2="720.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="830.0" x2="800.0" y2="900.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="865" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="980.0" y1="775.0" x2="940.0" y2="470.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="960" y="622" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="960.0" x2="800.0" y2="1020.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="1110.0" x2="800.0" y2="1170.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="1225.0" x2="1100.0" y2="1220.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1035" y="1222" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="1280.0" x2="800.0" y2="1340.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="1310" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="1100.0" y1="1220.0" x2="990.0" y2="1042.5" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1045" y="1131" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">coba lagi</text>
+<line x1="800.0" y1="1420.0" x2="800.0" y2="1480.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="1540.0" x2="800.0" y2="1600.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="1710.0" x2="800.0" y2="1770.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="970.0" y1="1825.0" x2="1100.0" y2="1820.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1035" y="1822" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">TIDAK</text>
+<line x1="800.0" y1="1880.0" x2="800.0" y2="1940.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="1910" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">YA</text>
+<line x1="1100.0" y1="1870.0" x2="940.0" y2="500.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1020" y="1185" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">tujuan baru</text>
+<line x1="800.0" y1="2010.0" x2="800.0" y2="2070.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="2170.0" x2="800.0" y2="2220.0" stroke="#566573" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<line x1="800.0" y1="2330.0" x2="800.0" y2="2400.0" stroke="#27AE60" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="800" y="2365" font-size="11" fill="#27AE60" text-anchor="middle" dy="-3">ARRIVED</text>
+<line x1="970.0" y1="2275.0" x2="1130.0" y2="2255.0" stroke="#CA6F1E" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1050" y="2265" font-size="11" fill="#CA6F1E" text-anchor="middle" dy="-3">REPLANNING</text>
+<line x1="630.0" y1="2275.0" x2="480.0" y2="2255.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="555" y="2265" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">POSITION_LOST</text>
+<line x1="1130.0" y1="2300.0" x2="1000.0" y2="1655.0" stroke="#CA6F1E" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="1065" y="1978" font-size="11" fill="#CA6F1E" text-anchor="middle" dy="-3">replan</text>
+<line x1="150.0" y1="2300.0" x2="610.0" y2="1065.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="380" y="1682" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">sample valid</text>
+<line x1="620.0" y1="2470.0" x2="660.0" y2="470.0" stroke="#C0392B" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+<text x="640" y="1470" font-size="11" fill="#C0392B" text-anchor="middle" dy="-3">tujuan</text>
+<g fill="none" stroke="none" stroke-width="1.5">
+<rect x="480.0" y="20.0" width="760.0" height="40.0"/>
+</g>
+<text x="860" y="40" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="860" dy="0">FLOWCHART NAVIGASI SMART TROLLEY — ALUR UTAMA (TaskNavigation 20 Hz)</tspan>
+</text>
+<g fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5">
+<rect x="40.0" y="70.0" width="360.0" height="150.0" rx="14" ry="14"/>
+</g>
+<text x="220" y="114" font-size="10" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="220" dy="0">EMERGENCY STOP (kapan saja)</tspan>
+<tspan x="220" dy="12.5"></tspan>
+<tspan x="220" dy="12.5">Dicek di awal tiap siklus update()</tspan>
+<tspan x="220" dy="12.5">· motor kiri = kanan = 0 (latched)</tspan>
+<tspan x="220" dy="12.5">· semua perintah ditolak</tspan>
+<tspan x="220" dy="12.5">· clear_estop → IDLE (butuh &#x27;start&#x27; ulang)</tspan>
+</text>
+<g fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5">
+<rect x="40.0" y="250.0" width="360.0" height="170.0" rx="14" ry="14"/>
+</g>
+<text x="220" y="298" font-size="10" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="220" dy="0">SAFETY INVARIANT</tspan>
+<tspan x="220" dy="12.5"></tspan>
+<tspan x="220" dy="12.5">Motor ≠ 0 HANYA pada state NAVIGATING.</tspan>
+<tspan x="220" dy="12.5">ERROR · POSITION_LOST · IDLE · ARRIVED ·</tspan>
+<tspan x="220" dy="12.5">REPLANNING · EMERGENCY_STOP → kiri = kanan = 0</tspan>
+<tspan x="220" dy="12.5">Safety gate firmware: nav &amp;&amp; !estop → setBoth</tspan>
+<tspan x="220" dy="12.5">selain itu → motors.stop()</tspan>
+</text>
+<g fill="#EAECEE" stroke="#7F8C8D" stroke-width="1.5">
+<rect x="40.0" y="450.0" width="360.0" height="170.0" rx="14" ry="14"/>
+</g>
+<text x="220" y="491" font-size="10" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="220" dy="0">TASK FREERTOS</tspan>
+<tspan x="220" dy="12.5"></tspan>
+<tspan x="220" dy="12.5">Core 0:</tspan>
+<tspan x="220" dy="12.5">· TaskPosition (baca JSON posisi)</tspan>
+<tspan x="220" dy="12.5">· TaskCommands (parse perintah)</tspan>
+<tspan x="220" dy="12.5">· TaskTelemetry (publish 5 Hz)</tspan>
+<tspan x="220" dy="12.5">Core 1:</tspan>
+<tspan x="220" dy="12.5">· TaskNavigation (FSM+follower 20 Hz)</tspan>
+</text>
+<g fill="#D5F5E3" stroke="#27AE60" stroke-width="1.5">
+<rect x="620.0" y="70.0" width="360.0" height="70.0"/>
+</g>
+<text x="800" y="98" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">MULAI</tspan>
+<tspan x="800" dy="15.0">Power-on / Boot ESP32-S3</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<polygon points="588.8,200.0 1011.2,200.0 1130.0,285.0 1011.2,370.0 588.8,370.0 470.0,285.0"/>
+</g>
+<text x="800" y="264" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">INISIALISASI</tspan>
+<tspan x="800" dy="13.75">· Baca graph.json + navigation.json (embedded / file)</tspan>
+<tspan x="800" dy="13.75">· Validasi config &amp; graph · buat task FreeRTOS</tspan>
+<tspan x="800" dy="13.75">· motor kiri = motor kanan = 0 · FSM = BOOT</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="660.0" y="440.0" width="280.0" height="60.0"/>
+</g>
+<text x="800" y="462" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">FSM = IDLE</tspan>
+<tspan x="800" dy="15.0">(motor = 0 · tunggu tujuan)</tspan>
+</text>
+<g fill="#E8DAEF" stroke="#8E44AD" stroke-width="1.5">
+<polygon points="650.0,570.0 990.0,570.0 950.0,660.0 610.0,660.0"/>
+</g>
+<text x="800" y="601" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">INPUT PERINTAH (TaskCommands)</tspan>
+<tspan x="800" dy="13.75">destination &lt;n&gt; · start · stop · cancel</tspan>
+<tspan x="800" dy="13.75">estop · clear_estop · replan</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="620.0" y="720.0" width="360.0" height="110.0"/>
+</g>
+<text x="800" y="768" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">Tujuan (destination)</tspan>
+<tspan x="800" dy="15.0">tersedia?</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="620.0" y="900.0" width="360.0" height="60.0"/>
+</g>
+<text x="800" y="922" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">FSM = WAITING_FOR_POSITION</tspan>
+<tspan x="800" dy="15.0">(motor = 0)</tspan>
+</text>
+<g fill="#E8DAEF" stroke="#8E44AD" stroke-width="1.5">
+<polygon points="650.0,1020.0 990.0,1020.0 950.0,1110.0 610.0,1110.0"/>
+</g>
+<text x="800" y="1058" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">INPUT POSISI (TaskPosition)</tspan>
+<tspan x="800" dy="15.0">UWB / EKF → (x, y, quality, valid, timestamp)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1170.0" width="340.0" height="110.0"/>
+</g>
+<text x="800" y="1210" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">Sample valid &amp; fresh?</tspan>
+<tspan x="800" dy="15.0">(validateMeasurement</tspan>
+<tspan x="800" dy="15.0">+ timeout)</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="1100.0" y="1180.0" width="320.0" height="80.0"/>
+</g>
+<text x="1260" y="1205" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1260" dy="0">TOLAK sample</tspan>
+<tspan x="1260" dy="15.0">invalid_sample_count++</tspan>
+<tspan x="1260" dy="15.0">(log dibatasi)</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="620.0" y="1340.0" width="360.0" height="80.0"/>
+</g>
+<text x="800" y="1366" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">FILTER (EMA) → filtered_position</tspan>
+<tspan x="800" dy="13.75">has_position = true · quality disimpan</tspan>
+<tspan x="800" dy="13.75">akumulasi travelled_distance</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="620.0" y="1480.0" width="360.0" height="60.0"/>
+</g>
+<text x="800" y="1510" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="800" dy="0">FSM = READY → PLANNING</tspan>
+</text>
+<g fill="#D6EAF8" stroke="#2471A3" stroke-width="1.5">
+<rect x="600.0" y="1600.0" width="400.0" height="110.0" rx="6"/><line x1="610.0" y1="1600.0" x2="610.0" y2="1710.0" stroke="inherit"/><line x1="990.0" y1="1600.0" x2="990.0" y2="1710.0" stroke="inherit"/>
+</g>
+<text x="800" y="1634" font-size="11" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">SUBROUTINE planRoute()</tspan>
+<tspan x="800" dy="13.75">snap node terdekat → saring obstacle →</tspan>
+<tspan x="800" dy="13.75">DIJKSTRA → bangun waypoint</tspan>
+<tspan x="800" dy="13.75">(detail: halaman 3)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="1770.0" width="340.0" height="110.0"/>
+</g>
+<text x="800" y="1825" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">Rute ditemukan?</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="1100.0" y="1770.0" width="340.0" height="100.0"/>
+</g>
+<text x="1270" y="1799" font-size="11" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1270" dy="0">FSM = ERROR</tspan>
+<tspan x="1270" dy="13.75">motor = 0 · catat error</tspan>
+<tspan x="1270" dy="13.75">(INVALID_DEST / ROUTE_NOT_FOUND /</tspan>
+<tspan x="1270" dy="13.75">START_NODE_NOT_FOUND)</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="620.0" y="1940.0" width="360.0" height="70.0"/>
+</g>
+<text x="800" y="1968" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">FSM = NAVIGATING (20 Hz)</tspan>
+<tspan x="800" dy="15.0">motor AKTIF · lihat halaman 2</tspan>
+</text>
+<g fill="#AED6F1" stroke="#1F618D" stroke-width="1.5">
+<rect x="620.0" y="2070.0" width="360.0" height="100.0" rx="6"/><line x1="630.0" y1="2070.0" x2="630.0" y2="2170.0" stroke="inherit"/><line x1="970.0" y1="2070.0" x2="970.0" y2="2170.0" stroke="inherit"/>
+</g>
+<text x="800" y="2105" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">SUBROUTINE NAVIGATING</tspan>
+<tspan x="800" dy="15.0">follower → PID → motor</tspan>
+<tspan x="800" dy="15.0">(detail: halaman 2)</tspan>
+</text>
+<g fill="#FCF3CF" stroke="#B7950B" stroke-width="1.5">
+<rect x="630.0" y="2220.0" width="340.0" height="110.0"/>
+</g>
+<text x="800" y="2268" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">Hasil / event</tspan>
+<tspan x="800" dy="15.0">NAVIGATING?</tspan>
+</text>
+<g fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5">
+<rect x="620.0" y="2400.0" width="360.0" height="70.0"/>
+</g>
+<text x="800" y="2428" font-size="12" text-anchor="middle" font-weight="bold" fill="#1a1a1a">
+<tspan x="800" dy="0">SELESAI (ARRIVED)</tspan>
+<tspan x="800" dy="15.0">motor = 0 · telemetry final</tspan>
+</text>
+<g fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5">
+<rect x="1130.0" y="2210.0" width="330.0" height="90.0"/>
+</g>
+<text x="1295" y="2240" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="1295" dy="0">REPLANNING</tspan>
+<tspan x="1295" dy="15.0">zeroMotion → planRoute(replan)</tspan>
+<tspan x="1295" dy="15.0">(deviasi / tujuan berubah)</tspan>
+</text>
+<g fill="#FADBD8" stroke="#C0392B" stroke-width="1.5">
+<rect x="150.0" y="2210.0" width="330.0" height="90.0"/>
+</g>
+<text x="315" y="2240" font-size="12" text-anchor="middle"  fill="#1a1a1a">
+<tspan x="315" dy="0">POSITION_LOST</tspan>
+<tspan x="315" dy="15.0">zeroMotion · tunggu</tspan>
+<tspan x="315" dy="15.0">sample valid baru</tspan>
+</text>
+</svg>

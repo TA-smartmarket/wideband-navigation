@@ -28,6 +28,13 @@ struct PIDConfig {
 
     /// Nominal sample time; used to reject absurd dt values.
     float nominal_dt_s{0.05f};
+
+    /// When true, both the error and the measurement derivative are computed
+    /// through the shortest angular distance (suitable for a heading loop).
+    /// A heading loop must never pass the raw setpoint-measurement difference to
+    /// the PID: near +/-pi that difference spans ~2*pi, so a ~180 deg turn would
+    /// be driven around the *long* way instead of the short way.
+    bool circular{false};
 };
 
 class PIDController {

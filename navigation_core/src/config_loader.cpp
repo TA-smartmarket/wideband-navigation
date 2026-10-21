@@ -82,8 +82,7 @@ bool loadGraph(const char* text, Graph& out, char* error, std::size_t error_size
     if (metadata.isObject()) {
         const JsonValue frame = metadata.member("frame_id");
         char frame_id[kFrameFieldSize];
-        if (frame.isString() && frame.asString(frame_id, sizeof(frame_id)) &&
-            !boundedEquals(frame_id, kFrameId)) {
+        if (frame.isString() && frame.asString(frame_id, sizeof(frame_id)) && !boundedEquals(frame_id, kFrameId)) {
             setError(error, error_size, "graph.json: map.frame_id must be \"smart_market_map\"");
             return false;
         }
@@ -144,8 +143,7 @@ bool loadGraph(const char* text, Graph& out, char* error, std::size_t error_size
                 weight_m = weight.asFloat(-1.0f);
                 if (weight_m < 0.0f) {
                     char detail[96];
-                    std::snprintf(detail, sizeof(detail),
-                                  "graph.json: edge %d->%d has a negative weight", from, to);
+                    std::snprintf(detail, sizeof(detail), "graph.json: edge %d->%d has a negative weight", from, to);
                     setError(error, error_size, "%s", detail);
                     return false;
                 }
@@ -176,8 +174,7 @@ bool loadGraph(const char* text, Graph& out, char* error, std::size_t error_size
     return true;
 }
 
-bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
-                          std::size_t error_size) {
+bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, std::size_t error_size) {
     const JsonValue root = jsonParse(text);
     if (!root.isObject()) {
         setError(error, error_size, "navigation.json: invalid JSON object");
@@ -194,10 +191,12 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
                 static_cast<uint32_t>(timeout.asInt(static_cast<int>(config.position.timeout_ms)));
         }
         readFloat(position, "heading_min_displacement_m", config.position.heading_min_displacement_m);
+        readFloat(position, "heading_correction_gain", config.position.heading_correction_gain);
+        readFloat(position, "heading_quality_baseline_boost", config.position.heading_quality_baseline_boost);
         const JsonValue stale = position.member("stale_sample_ms");
         if (stale.isNumber()) {
-            config.position.stale_sample_ms = static_cast<uint32_t>(
-                stale.asInt(static_cast<int>(config.position.stale_sample_ms)));
+            config.position.stale_sample_ms =
+                static_cast<uint32_t>(stale.asInt(static_cast<int>(config.position.stale_sample_ms)));
         }
         readFloat(position, "map_margin_m", config.position.map_margin_m);
         const JsonValue filter = position.member("filter");
@@ -210,6 +209,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
     const JsonValue path = root.member("path");
     if (path.isObject()) {
         readFloat(path, "max_graph_snap_distance_m", config.path.max_graph_snap_distance_m);
+        readFloat(path, "replan_max_graph_snap_distance_m", config.path.replan_max_graph_snap_distance_m);
         readFloat(path, "waypoint_tolerance_m", config.path.waypoint_tolerance_m);
         readFloat(path, "destination_tolerance_m", config.path.destination_tolerance_m);
         readFloat(path, "max_cross_track_error_m", config.path.max_cross_track_error_m);
@@ -230,8 +230,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
             readFloat(lookahead, "distance_m", config.path.lookahead_distance_m);
         }
         readFloat(path, "corner_slowdown_distance_m", config.path.corner_slowdown_distance_m);
-        readFloat(path, "destination_slowdown_distance_m",
-                  config.path.destination_slowdown_distance_m);
+        readFloat(path, "destination_slowdown_distance_m", config.path.destination_slowdown_distance_m);
     }
 
     const JsonValue motion = root.member("motion");
@@ -245,8 +244,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
         readFloat(motion, "max_linear_accel_mps2", config.motion.max_linear_accel_mps2);
         readFloat(motion, "max_angular_accel_radps2", config.motion.max_angular_accel_radps2);
         readFloat(motion, "heading_deadband_deg", config.motion.heading_deadband_deg);
-        readFloat(motion, "max_motor_command_change_per_s",
-                  config.motion.max_motor_command_change_per_s);
+        readFloat(motion, "max_motor_command_change_per_s", config.motion.max_motor_command_change_per_s);
     }
 
     const JsonValue robot = root.member("robot");
@@ -299,8 +297,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
         // The wheel radius is shared with the chassis configuration.
         config.stepper_left.wheel_radius_m = config.drive.wheel_radius_m;
         config.stepper_right.wheel_radius_m = config.drive.wheel_radius_m;
-        config.enable_step_odometry =
-            stepper.member("enable_odometry").asBool(config.enable_step_odometry);
+        config.enable_step_odometry = stepper.member("enable_odometry").asBool(config.enable_step_odometry);
     }
 
     const JsonValue control = root.member("control");
@@ -331,6 +328,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error,
     // The proportional gain, the output saturation and the sample time always
     // follow the motion/control sections: one source of truth per parameter.
     config.heading_pid.kp = config.motion.heading_kp;
+    config.heading_pid.circular = true;  // heading loop consumes angular error
     config.heading_pid.output_min = -config.motion.max_angular_speed_radps;
     config.heading_pid.output_max = config.motion.max_angular_speed_radps;
     config.heading_pid.nominal_dt_s = 1.0f / config.control.navigation_rate_hz;
