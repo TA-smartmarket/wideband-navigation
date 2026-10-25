@@ -54,6 +54,14 @@ struct FirmwareContext {
     volatile bool command_replan{false};
     volatile int command_destination{-1};
 
+    /// Dashboard manual control.  The navigation task is the only task that
+    /// reads and actuates these values; serial RX merely updates the latest
+    /// bounded command and heartbeat time.
+    volatile bool manual_active{false};
+    volatile float manual_linear_mps{0.0f};
+    volatile float manual_angular_radps{0.0f};
+    volatile uint32_t manual_heartbeat_ms{0};
+
     /// Set by the navigation task so the command task can report readiness.
     volatile bool navigation_ready{false};
 

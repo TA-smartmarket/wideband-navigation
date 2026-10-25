@@ -72,7 +72,7 @@
       "max_step_rate_hz": 20000,
       "min_step_rate_hz": 2,
       "max_step_accel_hz_per_s": 20000,
-      "comment": "NEMA 17 (200 full steps/rev) + A4988 at 1/16 microstepping = 3200 steps/rev. max_step_rate_hz must not exceed the firmware STEP timer base (pin_config kStepperTimerBaseHz = 20000)."
+      "comment": "Development placeholders for a STEP/DIR driver. Verify the NEMA23 full-step count, TB6600 DIP microstep setting, wheel geometry and maximum safe step rate before hardware use. max_step_rate_hz must not exceed firmware kStepperTimerBaseHz."
     },
     "left": {
       "invert_direction": false
@@ -81,6 +81,6 @@
       "invert_direction": false
     },
     "enable_odometry": true,
-    "comment": "Stepper axes. drive_kind selects which actuator the firmware instantiates. invert_direction flips the DIR level if a motor is mounted mirrored. Set microsteps to match the A4988 MS1/MS2/MS3 wiring (1, 2, 4, 8 or 16)."
+    "comment": "Stepper axes. drive_kind selects the actuator. invert_direction flips DIR for mirrored mounting. Set microsteps to the final TB6600 DIP setting; do not assume this development value is suitable for the trolley."
   }
 }

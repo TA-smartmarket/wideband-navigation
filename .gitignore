@@ -22,6 +22,9 @@ results/*
 !logs/.gitkeep
 !results/.gitkeep
 
+# Dashboard map-editor working scene (created from scene.example.json at runtime)
+config/dashboard_scene.json
+
 # --- Editors / OS -----------------------------------------------------------
 .vscode/
 .idea/

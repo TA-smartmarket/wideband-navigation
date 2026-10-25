@@ -25,6 +25,16 @@ void TelemetryPublisher::publishJson(const nav::NavigationStatus& status, uint64
         NAV_LOG_WARN(kTag, "telemetry buffer too small; line dropped");
         return;
     }
+    // Keep the established navigation fields flat for current consumers while
+    // adding an unambiguous packet discriminator for the laptop dashboard.
+    const std::size_t length = std::strlen(buffer_);
+    constexpr const char kProtocolFields[] = ",\"type\":\"telemetry\",\"protocol_version\":1}";
+    if (length == 0 || buffer_[length - 1] != '}' || length + sizeof(kProtocolFields) > sizeof(buffer_)) {
+        NAV_LOG_WARN(kTag, "telemetry buffer has no room for protocol fields; line dropped");
+        return;
+    }
+    buffer_[length - 1] = '\0';
+    std::strcat(buffer_, kProtocolFields);
     sink_->write(buffer_);
     sink_->write("\n");
     ++published_count_;

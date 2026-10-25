@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Trolley Control Station</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header><span class="brand">SMART TROLLEY <b>CONTROL STATION</b></span><span id="status">MODE: SIMULATION · ESP32: DISCONNECTED</span></header>
+  <main>
+    <section class="map-panel">
+      <div class="map-toolbar">
+        <label>Mode <select id="mode"><option value="simulation">SIMULATION</option><option value="hardware">HARDWARE</option></select></label>
+        <label>Start <select id="route-start"></select></label>
+        <label>Destination <select id="route-destination"></select></label>
+        <button id="plan-route">GENERATE DIJKSTRA PATH</button>
+        <span id="route-result">No route planned</span>
+      </div>
+      <canvas id="map" width="1050" height="690" aria-label="Smart Market map editor"></canvas>
+      <p class="hint">Map editor: drag empty space to create a rack. Drag a selected rack to move it; drag its lower-right handle to resize. Select it to edit details.</p>
+    </section>
+    <aside>
+      <details open><summary>CONNECTION</summary>
+        <div class="grid"><button id="refresh-ports">REFRESH</button><select id="port"><option>Choose COM port</option></select></div>
+        <div class="grid"><input id="baud" value="115200" inputmode="numeric"><button id="connect">CONNECT</button><button id="disconnect">DISCONNECT</button></div>
+        <output id="connection">Not connected</output>
+      </details>
+      <details open><summary>NAVIGATION & POSE</summary>
+        <div id="navigation" class="readout">State: N/A<br>Route: N/A</div>
+        <div class="three"><div>ODO <span id="odo">N/A</span></div><div>UWB <span id="uwb">N/A</span></div><div>NAV <span id="nav">N/A</span></div></div>
+        <button id="send-destination">SEND DESTINATION</button><button class="danger" data-command="estop">E-STOP</button><button data-command="estop.reset">RESET E-STOP</button>
+      </details>
+      <details open><summary>MANUAL CONTROL</summary>
+        <div class="keyboard">W<br><span>A</span><span>S</span><span>D</span><br><small>Q / E pivot · SPACE E-STOP</small></div>
+        <label>Linear m/s <input id="linear" type="range" min="0.02" max="0.45" value="0.18" step="0.01"><output id="linear-value">0.18</output></label>
+        <label>Turn rad/s <input id="turn" type="range" min="0.1" max="2.2" value="0.8" step="0.1"><output id="turn-value">0.8</output></label>
+        <output>Keyboard commands are held with a heartbeat; releasing keys sends stop.</output>
+      </details>
+      <details><summary>PID TUNING</summary>
+        <div class="pid"><label>Left Kp <input id="left-kp" value="0"></label><label>Ki <input id="left-ki" value="0"></label><label>Kd <input id="left-kd" value="0"></label><button data-pid="left">APPLY LEFT</button></div>
+        <div class="pid"><label>Right Kp <input id="right-kp" value="0"></label><label>Ki <input id="right-ki" value="0"></label><label>Kd <input id="right-kd" value="0"></label><button data-pid="right">APPLY RIGHT</button></div>
+        <button data-command="config.get">LOAD FROM ESP32</button><button data-command="config.save">SAVE TO ESP32</button><button data-command="config.defaults">RESTORE DEFAULTS</button>
+        <div id="wheel-data" class="readout">Wheel telemetry: N/A</div>
+      </details>
+      <details open><summary>SELECTED RACK</summary>
+        <div id="obstacle-fields" class="form"><label>Name <input id="ob-name" disabled></label><label>Width m <input id="ob-width" type="number" min="0.1" step="0.1" disabled></label><label>Depth m <input id="ob-depth" type="number" min="0.1" step="0.1" disabled></label><button id="save-obstacle" disabled>SAVE RACK</button><button id="delete-obstacle" class="danger" disabled>DELETE</button></div>
+      </details>
+      <details><summary>DEBUG EVENTS</summary><ol id="events"></ol></details>
+    </aside>
+  </main>
+  <footer id="footer">UI update: -- Hz · Telemetry: -- · Protocol v1</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

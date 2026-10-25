@@ -17,6 +17,8 @@
 //   * a stalled navigation loop trips the task watchdog instead of driving on.
 #include <Arduino.h>
 
+#include <cstring>
+
 #include "app_config.hpp"
 #include "app_context.hpp"
 #include "motor_driver.hpp"
@@ -26,6 +28,7 @@
 #include "network_position_provider.hpp"
 #include "pin_config.hpp"
 #include "position_provider.hpp"
+#include "serial_protocol.hpp"
 #include "stepper_driver.hpp"
 #include "telemetry.hpp"
 
@@ -115,7 +118,45 @@ void taskCommands(void*) {
                 }
                 line[length] = '\0';
                 nav::ParsedCommand command;
-                if (nav::parseCommand(line, command)) {
+                // UWB samples use the documented schema and do not have a
+                // command `type`; leave them quiet when a mock build shares
+                // USB serial with the position reader.
+                if (line[0] == '{' && std::strstr(line, "\"type\"") != nullptr) {
+                    DashboardCommand dashboard_command;
+                    char dashboard_error[96] = {};
+                    if (parseDashboardCommand(line, dashboard_command, dashboard_error, sizeof(dashboard_error))) {
+                        switch (dashboard_command.kind) {
+                            case DashboardCommandKind::HELLO:
+                                Serial.printf("{\"type\":\"ack\",\"protocol_version\":%u,\"message\":\"Smart Trolley firmware %s\"}\n",
+                                              kDashboardProtocolVersion, FIRMWARE_VERSION);
+                                break;
+                            case DashboardCommandKind::MANUAL:
+                                ctx.manual_linear_mps = dashboard_command.linear_mps;
+                                ctx.manual_angular_radps = dashboard_command.angular_radps;
+                                ctx.manual_heartbeat_ms = millis();
+                                ctx.manual_active = true;
+                                break;
+                            case DashboardCommandKind::ESTOP: ctx.command_estop = true; break;
+                            case DashboardCommandKind::RESET_ESTOP: ctx.command_clear_estop = true; break;
+                            case DashboardCommandKind::NAVIGATION_STOP: ctx.command_stop = true; break;
+                            case DashboardCommandKind::NAVIGATION_DESTINATION:
+                                ctx.manual_active = false;
+                                ctx.command_destination = dashboard_command.node_id;
+                                break;
+                            case DashboardCommandKind::CONFIG_GET:
+                            case DashboardCommandKind::CONFIG_SAVE:
+                            case DashboardCommandKind::CONFIG_DEFAULTS:
+                                // Configuration persistence is intentionally not
+                                // acknowledged until every active field has an
+                                // NVS-backed implementation.
+                                Serial.printf("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"configuration persistence is not available in this firmware build\"}\n");
+                                break;
+                            default: break;
+                        }
+                    } else {
+                        Serial.printf("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"%s\"}\n", dashboard_error);
+                    }
+                } else if (nav::parseCommand(line, command)) {
                     switch (command.kind) {
                         case nav::CommandKind::DESTINATION:
                             if (command.argument > 0) {
@@ -163,11 +204,6 @@ void taskCommands(void*) {
                     if (command.kind == nav::CommandKind::UNKNOWN) {
                         Serial.printf("CMD: unknown command '%s' (try 'help')\n", command.raw);
                     }
-                } else if (length > 0 && line[0] == '{') {
-                    // A raw position JSON line: forward it to the position
-                    // parser by re-injecting it is unnecessary (the position task
-                    // reads the same UART); count it as malformed only if the
-                    // position task never sees it.  Nothing to do here.
                 }
                 length = 0;
                 continue;
@@ -225,8 +261,15 @@ void taskNavigation(void*) {
         // --- apply queued commands ---------------------------------------
         if (ctx.command_estop) {
             ctx.command_estop = false;
-            motors.stop();  // cut power first, then tell the FSM
+            // Cut STEP generation/driver enable before the FSM state change.
+            // A normal stop is ramped; E-stop must be immediate.
+            if (StepperMotorDriver* stepper = stepperDriver()) {
+                stepper->emergencyStop();
+            } else {
+                motors.stop();
+            }
             ctx.fsm.emergencyStop();
+            ctx.manual_active = false;
             ctx.telemetry->publishEvent("ESTOP", "emergency stop engaged");
         }
         if (ctx.command_clear_estop) {
@@ -238,11 +281,13 @@ void taskNavigation(void*) {
         if (ctx.command_cancel) {
             ctx.command_cancel = false;
             ctx.fsm.cancelNavigation();
+            ctx.manual_active = false;
             motors.stop();
         }
         if (ctx.command_stop) {
             ctx.command_stop = false;
             ctx.fsm.stopNavigation();
+            ctx.manual_active = false;
             motors.stop();
         }
         if (ctx.command_replan) {
@@ -284,21 +329,22 @@ void taskNavigation(void*) {
         // Safety gate: the FSM is the single authority on whether motion is
         // allowed, but the motor layer re-checks the emergency stop so a latched
         // E-stop can never be overridden by a stale status field.
-        if (status.state == nav::NavState::NAVIGATING && !ctx.fsm.emergencyStopActive()) {
+        const bool manual_timed_out = ctx.manual_active &&
+            static_cast<uint32_t>(now_ms - ctx.manual_heartbeat_ms) > MANUAL_COMMAND_TIMEOUT_MS;
+        if (manual_timed_out) {
+            ctx.manual_active = false;
+            motors.stop();
+            ctx.telemetry->publishEvent("WATCHDOG", "manual command heartbeat timed out");
+        }
+        if (ctx.manual_active && !ctx.fsm.emergencyStopActive()) {
+            const nav::Twist manual_twist{ctx.manual_linear_mps, ctx.manual_angular_radps};
+            const nav::MotorCommand manual_motor =
+                nav::twistToMotorCommand(manual_twist, motorDriverConfig().drive);
+            motors.setBoth(manual_motor.left, manual_motor.right);
+        } else if (status.state == nav::NavState::NAVIGATING && !ctx.fsm.emergencyStopActive()) {
             motors.setBoth(status.motor.left, status.motor.right);
         } else {
             motors.stop();
-        }
-
-        // A step/dir driver needs its pulse train independent of the control
-        // rate, so the generator is serviced in short sub-slices until the next
-        // navigation cycle is due.  This keeps the emitted STEP frequency close
-        // to the commanded one instead of bursting every 50 ms.
-        if (StepperMotorDriver* stepper = stepperDriver()) {
-            const TickType_t cycle_end = last_wake + pdMS_TO_TICKS(NAVIGATION_PERIOD_MS);
-            while (xTaskGetTickCount() < cycle_end) {
-                stepper->servicePulseGenerator();
-            }
         }
 
         // --- loop timing diagnostics -------------------------------------

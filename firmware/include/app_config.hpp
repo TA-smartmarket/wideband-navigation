@@ -17,7 +17,7 @@
 ///   0 = the real integration adapter (see RealPositionProvider in
 ///       position_provider.cpp)
 #ifndef NAVIGATION_USE_MOCK_POSITION
-#define NAVIGATION_USE_MOCK_POSITION 1
+#define NAVIGATION_USE_MOCK_POSITION 0
 #endif
 
 /// Position transport selection (used when the real positioning server exists).
@@ -110,6 +110,10 @@ constexpr uint32_t POSITION_QUEUE_LENGTH = 8;
 
 /// Serial line buffer for incoming JSON / commands (bounded, no reallocation).
 constexpr uint32_t SERIAL_LINE_BUFFER = 320;
+
+/// Manual motion commands are valid only while the dashboard continues sending
+/// its heartbeat.  USB loss therefore stops a manually driven trolley.
+constexpr uint32_t MANUAL_COMMAND_TIMEOUT_MS = 350;
 
 /// Telemetry output buffer (single line of JSON).
 constexpr uint32_t TELEMETRY_BUFFER = 1200;

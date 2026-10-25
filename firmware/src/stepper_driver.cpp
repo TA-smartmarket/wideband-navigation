@@ -3,15 +3,13 @@
 #include "navigation/geometry.hpp"
 #include "navigation/logging.hpp"
 
+#include <driver/gpio.h>
+
 namespace firmware {
 
 namespace {
 constexpr const char* kTag = "STEP";
 StepperMotorDriver* g_stepper = nullptr;
-
-/// Minimum STEP pulse width.  The A4988 datasheet requires >= 1 us; 5 us gives
-/// margin for opto-isolated breakouts and keeps the pulse visible on a scope.
-constexpr uint32_t kStepPulseWidthUs = 5;
 
 float clampCommand(float value) {
     if (!nav::isFinite(value)) {
@@ -28,12 +26,12 @@ bool StepperMotorDriver::begin(const nav::StepperConfig& left_config,
     left_pins_ = left_pins;
     right_pins_ = right_pins;
 
-    // Safe state first: drivers disabled (EN high) before anything else, so a
+    // Safe state first: drivers disabled before anything else, so a
     // boot glitch cannot energise the coils.
     pinMode(left_pins_.enable, OUTPUT);
     pinMode(right_pins_.enable, OUTPUT);
-    digitalWrite(left_pins_.enable, HIGH);
-    digitalWrite(right_pins_.enable, HIGH);
+    digitalWrite(left_pins_.enable, kStepperEnableActiveLow ? HIGH : LOW);
+    digitalWrite(right_pins_.enable, kStepperEnableActiveLow ? HIGH : LOW);
 
     pinMode(left_pins_.step, OUTPUT);
     pinMode(left_pins_.dir, OUTPUT);
@@ -48,8 +46,10 @@ bool StepperMotorDriver::begin(const nav::StepperConfig& left_config,
     max_wheel_speed_mps_ = max_wheel_speed_mps > 0.0f ? max_wheel_speed_mps : 0.70f;
     enabled_ = true;
     drivers_energised_ = false;
+    g_stepper = this;
+    startPulseTimer();
 
-    NAV_LOG_INFO(kTag, "A4988 step/dir ready: L(step=%d dir=%d en=%d) R(step=%d dir=%d en=%d)",
+    NAV_LOG_INFO(kTag, "TB6600 step/dir ready: L(step=%d dir=%d en=%d) R(step=%d dir=%d en=%d)",
                  left_pins_.step, left_pins_.dir, left_pins_.enable,
                  right_pins_.step, right_pins_.dir, right_pins_.enable);
     NAV_LOG_INFO(kTag, "microsteps=%ld, steps/rev=%ld, steps/m=%.1f, max rate=%.0f Hz",
@@ -57,15 +57,61 @@ bool StepperMotorDriver::begin(const nav::StepperConfig& left_config,
                  static_cast<long>(nav::stepsPerRevolution(left_config)),
                  static_cast<double>(nav::stepsPerMeter(left_config)),
                  static_cast<double>(left_config.max_step_rate_hz));
-    return true;
+    return enabled_;
+}
+
+void StepperMotorDriver::startPulseTimer() {
+    // A STEP is generated over two timer edges.  At the configured 20 kHz
+    // maximum rate, the fixed high phase is 25 us: safe for TB6600 optocoupler
+    // inputs and independent from FreeRTOS scheduling or serial traffic.
+    pulse_timer_ = timerBegin(kStepperTimerBaseHz * 2u);
+    if (pulse_timer_ == nullptr) {
+        enabled_ = false;
+        NAV_LOG_ERROR(kTag, "cannot allocate STEP hardware timer");
+        return;
+    }
+    timerAttachInterrupt(pulse_timer_, &StepperMotorDriver::timerThunk);
+    timerAlarm(pulse_timer_, 1, true, 0);
+}
+
+void IRAM_ATTR StepperMotorDriver::timerThunk() {
+    if (g_stepper != nullptr) {
+        g_stepper->onTimerTick();
+    }
+}
+
+void IRAM_ATTR StepperMotorDriver::onTimerTick() {
+    if (!enabled_) return;
+    if (pulse_high_) {
+        if (left_pulse_active_) gpio_set_level(static_cast<gpio_num_t>(left_pins_.step), 0);
+        if (right_pulse_active_) gpio_set_level(static_cast<gpio_num_t>(right_pins_.step), 0);
+        pulse_high_ = false;
+        left_pulse_active_ = false;
+        right_pulse_active_ = false;
+        return;
+    }
+    const int32_t left_steps = drive_.left().advance(basePeriodS());
+    const int32_t right_steps = drive_.right().advance(basePeriodS());
+    if ((left_steps <= 0 && right_steps <= 0) || !drivers_energised_) return;
+    if (left_steps > 0) {
+        gpio_set_level(static_cast<gpio_num_t>(left_pins_.dir), drive_.left().direction() > 0 ? 1 : 0);
+        gpio_set_level(static_cast<gpio_num_t>(left_pins_.step), 1);
+        left_pulse_active_ = true;
+    }
+    if (right_steps > 0) {
+        gpio_set_level(static_cast<gpio_num_t>(right_pins_.dir), drive_.right().direction() > 0 ? 1 : 0);
+        gpio_set_level(static_cast<gpio_num_t>(right_pins_.step), 1);
+        right_pulse_active_ = true;
+    }
+    pulse_high_ = left_pulse_active_ || right_pulse_active_;
 }
 
 void StepperMotorDriver::setEnabled(bool enable) {
     if (!enabled_) {
         return;
     }
-    // A4988 EN is active LOW.
-    const int level = enable ? LOW : HIGH;
+    const int level = enable ? (kStepperEnableActiveLow ? LOW : HIGH)
+                             : (kStepperEnableActiveLow ? HIGH : LOW);
     digitalWrite(left_pins_.enable, level);
     digitalWrite(right_pins_.enable, level);
     drivers_energised_ = enable;
@@ -102,8 +148,8 @@ void StepperMotorDriver::stop() {
     drive_.left().setContinuousMode();
     drive_.right().setContinuousMode();
     if (!enabled_) {
-        digitalWrite(left_pins_.enable, HIGH);
-        digitalWrite(right_pins_.enable, HIGH);
+        digitalWrite(left_pins_.enable, kStepperEnableActiveLow ? HIGH : LOW);
+        digitalWrite(right_pins_.enable, kStepperEnableActiveLow ? HIGH : LOW);
         return;
     }
     // Ramp the rate down through the pulse generator instead of zeroing it, so
@@ -112,6 +158,17 @@ void StepperMotorDriver::stop() {
     if (!kStepperHoldWhenIdle) {
         setEnabled(false);
     }
+}
+
+void StepperMotorDriver::emergencyStop() {
+    drive_.left().setTargetRateHz(0.0f);
+    drive_.right().setTargetRateHz(0.0f);
+    setEnabled(false);
+    digitalWrite(left_pins_.step, LOW);
+    digitalWrite(right_pins_.step, LOW);
+    pulse_high_ = false;
+    left_pulse_active_ = false;
+    right_pulse_active_ = false;
 }
 
 void StepperMotorDriver::setRpm(float left_rpm, float right_rpm) {
@@ -148,39 +205,8 @@ bool StepperMotorDriver::idle() const {
            !drive_.left().moving() && !drive_.right().moving();
 }
 
-void StepperMotorDriver::writeAxis(const nav::StepperAxis& axis, const StepperPins& pins,
-                                   int32_t steps) {
-    if (steps <= 0) {
-        return;
-    }
-    // DIR must be stable before the first pulse of the move.
-    digitalWrite(pins.dir, axis.direction() > 0 ? HIGH : LOW);
-    for (int32_t i = 0; i < steps; ++i) {
-        digitalWrite(pins.step, HIGH);
-        delayMicroseconds(kStepPulseWidthUs);
-        digitalWrite(pins.step, LOW);
-        delayMicroseconds(kStepPulseWidthUs);
-    }
-}
-
 bool StepperMotorDriver::servicePulseGenerator() {
-    if (!enabled_) {
-        return false;
-    }
-    const float dt_s = basePeriodS();
-    const int32_t left_steps = drive_.left().advance(dt_s);
-    const int32_t right_steps = drive_.right().advance(dt_s);
-
-    if (left_steps <= 0 && right_steps <= 0) {
-        return false;
-    }
-    // Energise before pulsing: a pulse into a disabled driver is lost motion.
-    if (!drivers_energised_) {
-        setEnabled(true);
-    }
-    writeAxis(drive_.left(), left_pins_, left_steps);
-    writeAxis(drive_.right(), right_pins_, right_steps);
-    return true;
+    return pulse_high_;
 }
 
 StepperMotorDriver* stepperDriver() { return g_stepper; }

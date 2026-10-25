@@ -207,6 +207,37 @@ Keyboard controls (also shown in the status panel):
 Each run writes `logs/<scenario>_runNNN_<timestamp>.csv` and
 `results/<scenario>_runNNN_<timestamp>_summary.json`.
 
+## Control-station dashboard
+
+The Pygame simulator remains the reference simulation UI.  A separate local
+browser dashboard provides the operator-facing control station without
+duplicating the simulator or the navigation core:
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r dashboard\requirements.txt
+python dashboard\main.py
+```
+
+Open <http://127.0.0.1:8000>.  Start in **SIMULATION** mode for map/graph and
+obstacle editing.  Hardware mode is deliberately opt-in: choose a COM port and
+connect it before commands can be sent.  The dashboard speaks newline-delimited
+JSON protocol version 1 over USB serial and writes received hardware telemetry
+to `logs/hardware_YYYYMMDD_HHMMSS.jsonl`.
+
+Keyboard teleoperation is W/S (forward/reverse), A/D (turn), Q/E (pivot), and
+Space (latched emergency stop).  A held key sends a 10 Hz heartbeat; firmware
+stops manual motion when that heartbeat expires.  Releasing all keys sends a
+zero command.  The dashboard does not invent encoder, PID, odometry, or UWB
+values: fields remain `N/A` until a firmware telemetry packet supplies them.
+
+Drag on empty map space to add an axis-aligned rack.  Select a rack to move,
+resize, rename, or delete it.  The editor rejects out-of-bounds racks and route
+preview excludes graph edges intersecting a rack.  Runtime scene changes are
+stored in `config/dashboard_scene.json`; the supplied `scene.example.json` is
+not overwritten.
+
 ## 7. Running the scenarios
 
 All fourteen scenarios are deterministic for the configured seed
@@ -323,8 +354,8 @@ Key navigation parameters:
 | `motion.heading_deadband_deg` | 5.0 | taper the angular command inside this error (straight-line stability) |
 | `motion.max_motor_command_change_per_s` | 6.0 | wheel-command slew limit (0 disables) |
 | `path.destination_slowdown_distance_m` | 0.60 | final-approach speed taper |
-| `drive_kind` | `stepper` | `stepper` (NEMA 17 + A4988) or `pwm_h_bridge` |
-| `stepper.microsteps` | 16 | must match the A4988 MS1/MS2/MS3 wiring |
+| `drive_kind` | `stepper` | `stepper` (TB6600 STEP/DIR) or `pwm_h_bridge` |
+| `stepper.microsteps` | 16 (placeholder) | must match the final TB6600 DIP setting |
 | `robot.wheel_base_m` | 0.32 | distance between the driven wheels |
 | `robot.max_wheel_speed_mps` | 0.70 | wheel speed needed for max cruise + max turn |
 | `control.navigation_rate_hz` | 20 | control loop rate |
@@ -398,11 +429,12 @@ python scripts/generate_reference_results.py --check
 ## 15. Known hardware assumptions
 
 * ESP32-S3-DevKitC-1, Arduino framework, C++17, PlatformIO.
-* Generic dual H-bridge driver (TB6612FNG / L298N / DRV8833 class) on LEDC PWM.
-* Two driven wheels, differential drive, wheel base 0.32 m, wheel radius 0.05 m.
+* Two TB6600-class STEP/DIR/ENABLE drivers for the selected NEMA23 motors.
+* Two driven wheels, differential drive. Wheel geometry remains a configuration
+  placeholder until mechanically measured.
 * Actuator selected by `drive_kind` in `config/navigation.json`: **`"stepper"`**
-  (NEMA 17 + A4988 step/dir, the default) or `"pwm_h_bridge"` (DC motor with an
-  H-bridge). Stepper control exposes STEP-rate/RPM conversion, an acceleration
+  (TB6600 step/dir, the default) or `"pwm_h_bridge"` (legacy DC-driver option).
+  Stepper control exposes STEP-rate/RPM conversion, an acceleration
   profile, exact position in steps/revolutions, direction and bench commands
   (`CMD:rpm`, `CMD:move`, `CMD:zero`, `CMD:stepper`).
 * No encoders in the default build: the heading comes from position

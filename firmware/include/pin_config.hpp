@@ -37,27 +37,26 @@ inline constexpr int kPwmResolutionBits = 10;  // 0..1023 duty
 inline constexpr int kLeftPwmChannel = 0;
 inline constexpr int kRightPwmChannel = 1;
 
-// --- Stepper drivers (NEMA 17 + A4988 class) --------------------------------
+// --- TB6600 STEP / DIR / ENABLE interface -----------------------------------
 //
-// A step/dir driver replaces the H-bridge when `drive_kind` is "stepper" in
-// config/navigation.json.  Each axis needs three signals:
+// Each TB6600-class driver needs three isolated logic inputs:
 //
 //   STEP : one pulse per microstep; frequency sets the speed
 //   DIR  : logic level selects the direction (set before the pulse train)
-//   EN   : active LOW enable; HIGH disables the driver (no holding torque)
+//   EN   : enable polarity depends on the actual TB6600 wiring
 //
-// The A4988 needs STEP pulses at least 1 us wide, so the pulse generator must
-// never run faster than the timer base frequency; `max_step_rate_hz` in the
-// configuration is validated against it.
+// IMPORTANT: GPIO numbers and enable polarity below are placeholders retained
+// only to keep a compileable default.  They MUST be verified against the real
+// ESP32-S3 board, the TB6600 PUL/DIR/ENA wiring, and any level-shifting circuit
+// before power is applied to a motor.  Do not use the values as a wiring guide.
 
 struct StepperPins {
     int step;
     int dir;
-    int enable;  // active LOW on A4988-class drivers
+    int enable;  // polarity is configured by kStepperEnableActiveLow
 };
 
-/// Left axis on GPIO 4/5/6, right axis on GPIO 7/15/16 (same pins the H-bridge
-/// used, so the wiring harness does not change).
+/// TODO: VERIFY WITH REAL HARDWARE.  Centralised placeholder assignments.
 inline constexpr StepperPins kStepperPinsLeft{
     /*step=*/4,
     /*dir=*/5,
@@ -69,13 +68,16 @@ inline constexpr StepperPins kStepperPinsRight{
     /*enable=*/16,
 };
 
+/// TODO: VERIFY WITH REAL HARDWARE.  Set according to the chosen TB6600 input
+/// wiring; many boards are wired active-low, but that is not universal.
+inline constexpr bool kStepperEnableActiveLow = true;
+
 /// STEP pulse generator base frequency.  One timer tick emits at most one pulse
 /// per axis, so `stepper.max_step_rate_hz` must not exceed this value.
 inline constexpr uint32_t kStepperTimerBaseHz = 20000;
 
 /// Leave the drivers enabled when both axes are idle, so the motors hold their
-/// position (holding torque).  Set false to disable them while stopped and save
-/// power at the cost of losing position under load.
+/// position.  Holding torque is not equivalent to available moving torque.
 inline constexpr bool kStepperHoldWhenIdle = true;
 
 // --- Optional quadrature encoders (CLOSED_LOOP_ENCODER mode) ----------------
