@@ -35,6 +35,12 @@ bool measurementFromJson(const JsonValue& root, PositionMeasurement& out) {
     parsed.timestamp_ms = timestamp.asUint64(0);
     parsed.position.x_m = x.asFloat(0.0f);
     parsed.position.y_m = y.asFloat(0.0f);
+    const JsonValue heading = root.member("heading_rad");
+    const JsonValue heading_valid = root.member("heading_valid");
+    if (heading.isNumber() && heading_valid.isBoolean()) {
+        parsed.heading_rad = heading.asFloat(0.0f);
+        parsed.heading_valid = heading_valid.asBool(false);
+    }
     parsed.quality = root.member("quality").asFloat(0.0f);
     parsed.valid = root.member("valid").asBool(false);
 
@@ -49,11 +55,14 @@ int measurementToJson(const PositionMeasurement& measurement, char* out, std::si
     const int written = std::snprintf(
         out, out_size,
         "{\"schema_version\":%u,\"trolley_id\":\"%s\",\"frame_id\":\"%s\",\"timestamp_ms\":%llu,"
-        "\"position\":{\"x_m\":%.4f,\"y_m\":%.4f},\"quality\":%.3f,\"valid\":%s}",
+        "\"position\":{\"x_m\":%.4f,\"y_m\":%.4f},\"heading_rad\":%.5f,"
+        "\"heading_valid\":%s,\"quality\":%.3f,\"valid\":%s}",
         static_cast<unsigned>(measurement.schema_version), measurement.trolley_id,
         measurement.frame_id, static_cast<unsigned long long>(measurement.timestamp_ms),
         static_cast<double>(sanitizeFinite(measurement.position.x_m)),
         static_cast<double>(sanitizeFinite(measurement.position.y_m)),
+        static_cast<double>(sanitizeFinite(measurement.heading_rad)),
+        measurement.heading_valid ? "true" : "false",
         static_cast<double>(sanitizeFinite(measurement.quality)),
         measurement.valid ? "true" : "false");
     if (written < 0) {

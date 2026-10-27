@@ -49,7 +49,7 @@ Files:
 4. create the status mutex (halt with motors stopped if it fails)
 5. load the built-in graph and navigation config; validate both
 6. fsm.begin(&graph, config); halt on any validation failure
-7. create the four tasks (pinned to cores)
+7. create the navigation, wheel-control, position, command, and telemetry tasks
 8. subscribe the navigation task to the task watchdog
 9. print the "ready" banner with an example position line
 ```
@@ -62,11 +62,12 @@ configuration or initialisation fault can never result in motion.
 | Task | Core | Priority | Stack | Period | Responsibility |
 |---|---|---|---|---|---|
 | `TaskNavigation` | 1 | 5 | 8192 | 50 ms | commands → FSM → follower → motors |
+| `TaskWheelControl` | 1 | 6 | 6144 | 10 ms | AS5600 → wheel PID → STEP rate; encoder odometry |
 | `TaskPosition` | 0 | 4 | 4096 | 20 ms | read JSON lines, publish the latest sample |
 | `TaskCommands` | 0 | 3 | 4096 | 10 ms | parse console lines into command flags |
 | `TaskTelemetry` | 0 | 2 | 6144 | 200 ms | format and publish telemetry |
 
-All four use `vTaskDelayUntil`, so their periods do not drift. The control loop
+All periodic tasks use `vTaskDelayUntil`, so their periods do not drift. The navigation loop
 never blocks: it takes the status mutex with a **zero** timeout and skips the
 snapshot if telemetry holds it, and it never performs serial I/O itself.
 
@@ -99,10 +100,14 @@ snapshot if telemetry holds it, and it never performs serial I/O itself.
   no `String` concatenation, no `malloc`/`new` in the control loop.
 * **Halt-on-fault:** configuration, graph, mutex or task-creation failure leaves
   the device with the motors stopped.
+* **Encoder fail-safe:** a missing/stale AS5600 sample or persistent RPM tracking
+  error commands zero STEP rate; closed-loop initialization never falls back to
+  open-loop motion.
 
-## 5. Stepper motors (NEMA 17 + A4988)
+## 5. Stepper motors (NEMA23 + TB6600-class driver)
 
-The trolley uses two NEMA 17 steppers driven by A4988-class step/dir drivers.
+The trolley uses two HUIYINN NEMA23 steppers driven by TB6600-class external
+step/dir drivers.
 This is a fundamentally different actuator from an H-bridge: there is no duty
 cycle. Speed is the **STEP pulse frequency**, direction is a **DIR logic level**,
 and position is the **pulse count**.
@@ -114,7 +119,8 @@ navigation twist (v, omega)
    -> differential drive: left/right wheel velocity (m/s)
    -> stepsPerMeter = stepsPerRevolution * microsteps / (2*pi*wheel_radius)
    -> STEP frequency (Hz)  +  DIR level
-   -> A4988 STEP/DIR/EN
+   -> wheel RPM setpoint -> AS5600 feedback PID correction
+   -> TB6600 STEP/DIR/ENA
 ```
 
 With the defaults (200 full steps/rev, 1/16 microstepping, r = 0.05 m):
@@ -172,22 +178,24 @@ inline constexpr StepperPins kStepperPinsRight{ /*step=*/7,  /*dir=*/15, /*enabl
 inline constexpr uint32_t kStepperTimerBaseHz = 20000;
 ```
 
-`EN` is active LOW on A4988-class drivers. The driver is disabled at boot, so the
+`EN` active polarity is a provisional configuration value and must be checked
+on the purchased TB6600 module. The driver is disabled at boot, so the
 coils cannot be energised by a start-up glitch. `kStepperHoldWhenIdle` controls
 whether the drivers stay enabled while stopped (holding torque) or are disabled to
 save power.
 
-The STEP generator is serviced from the navigation task in sub-slices between
-control cycles, so the pulse train runs at its own rate rather than bursting every
-50 ms. A hardware timer ISR is the natural next step if the jitter proves too
-large at high step rates.
+The STEP generator runs from an ESP32 hardware-timer ISR at twice the 20 kHz
+maximum STEP rate (one edge raises STEP, the next lowers it). Navigation, serial,
+telemetry, and dashboard activity therefore cannot create pulse bursts.
 
-### Closed-loop position (optional)
+### Closed-loop wheel velocity and odometry
 
-Because the pulse count is known exactly, a position loop is straightforward: run
-the axis in `POSITION` mode and drive the *remaining* steps as the error. With
-quadrature encoders on the reserved pins the same structure gives true closed-loop
-control and stall detection.
+Each AS5600 uses a separate ESP32-S3 I2C controller because both devices have
+fixed address `0x36`. The 100 Hz wheel task unwraps 12-bit angles, estimates raw
+and filtered RPM, applies per-wheel PID correction to the requested STEP rate,
+and integrates measured wheel travel into differential-drive odometry. An
+explicit odometry heading is supplied to the shared path follower; STEP count is
+kept as commanded-motion telemetry and is never labelled as measured travel.
 
 ## 6. Motor driver (H-bridge alternative)
 
@@ -228,8 +236,8 @@ API are both handled by a version check. Direction pins are written before the
 duty is updated, and `stop()` drives both direction pins low so the bridge coasts
 instead of braking and heating.
 
-Motor control modes: `OPEN_LOOP_SIMULATION` (default, no encoders) and
-`CLOSED_LOOP_ENCODER` (pins reserved, abstraction in place).
+The H-bridge backend remains a legacy/configurable alternative; the default
+`drive_kind` is STEP/DIR with AS5600 closed-loop velocity control.
 
 ## 7. Position providers
 
@@ -249,6 +257,7 @@ public:
 | `firmware::MqttPositionProvider` | MQTT subscribe `<base>/navigation/position` | `NAVIGATION_POSITION_TRANSPORT=2` |
 | `nav::MockPositionProvider` | in-memory | tests |
 | `nav::ReplayPositionProvider` | recorded sequence | tests |
+| encoder odometry | internal AS5600 estimate, including heading | `position.source=encoder_odometry` |
 
 `RealPositionProvider` reuses the same parser as the mock provider, so switching
 to the real UWB subsystem changes only the transport.  The HTTP and MQTT
@@ -315,8 +324,9 @@ pio device monitor                   :: serial console
 pio run --target clean
 ```
 
-Verified build: RAM 15.3 % (50 184 / 327 680 bytes), Flash 10.9 %
-(365 037 / 3 342 336 bytes), no warnings from project sources.
+Latest compile-tested build: RAM 16.5 % (54 192 / 327 680 bytes), Flash 13.3 %
+(445 925 / 3 342 336 bytes; mock: 445 929 bytes). These figures are compile evidence, not physical
+hardware verification.
 
 The firmware embeds the graph and the navigation parameters as string literals
 (`builtinGraphJson()`, `builtinNavigationJson()` in `app_context.cpp`), so it

@@ -226,3 +226,26 @@ Replacing the mock position provider with the real UWB adapter changes **only**
 the provider implementation. Dijkstra, the graph, waypoint tracking, the PID,
 motor calculations and the telemetry schema stay untouched
 (see [integration.md](integration.md)).
+
+## Closed-loop wheel and odometry extension
+
+```text
+Navigation FSM (20 Hz)
+  -> normalized left/right target
+Wheel control task (100 Hz)
+  -> two AS5600 reads on independent I2C buses
+  -> unwrap + filtered measured RPM
+  -> per-wheel feedforward + PID correction
+  -> bounded STEP rate
+Hardware timer ISR (40 kHz edge service)
+  -> TB6600 STEP/DIR
+
+Measured wheel revolutions
+  -> differential odometry x/y/heading
+  -> optional ENCODER_ODOMETRY position source
+```
+
+The portable `wheel_encoder`, `wheel_velocity_controller`, and `odometry`
+modules contain the mathematics and safety state. Firmware owns I2C, NVS,
+FreeRTOS, and GPIO. The simulator and browser do not implement a competing
+hardware controller.

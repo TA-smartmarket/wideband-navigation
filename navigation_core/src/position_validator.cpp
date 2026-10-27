@@ -28,6 +28,10 @@ MeasurementValidation validateMeasurement(const PositionMeasurement& measurement
         result.status = MeasurementStatus::NON_FINITE_COORDINATE;
         return result;
     }
+    if (measurement.heading_valid && !isFinite(measurement.heading_rad)) {
+        result.status = MeasurementStatus::NON_FINITE_COORDINATE;
+        return result;
+    }
     if (!measurement.valid) {
         result.status = MeasurementStatus::INVALID_FLAG;
         return result;

@@ -7,6 +7,13 @@ namespace nav {
 ConfigValidation validateConfig(const NavigationConfig& config) {
     ConfigValidation result;
 
+    if (config.position_source != PositionSourceMode::ENCODER_ODOMETRY &&
+        config.position_source != PositionSourceMode::EXTERNAL_MOCK_UWB &&
+        config.position_source != PositionSourceMode::REAL_UWB) {
+        result.fail("position.source is invalid");
+        return result;
+    }
+
     // --- position -----------------------------------------------------------
     if (!isFinite(config.position.minimum_quality) || config.position.minimum_quality < 0.0f ||
         config.position.minimum_quality > 1.0f) {
@@ -136,6 +143,11 @@ ConfigValidation validateConfig(const NavigationConfig& config) {
         result.fail("control.navigation_rate_hz must be within (0, 200]");
         return result;
     }
+    if (!isFinite(config.control.wheel_rate_hz) || config.control.wheel_rate_hz < 20.0f ||
+        config.control.wheel_rate_hz > 500.0f) {
+        result.fail("control.wheel_rate_hz must be within [20, 500]");
+        return result;
+    }
     if (!isFinite(config.control.telemetry_rate_hz) || config.control.telemetry_rate_hz <= 0.0f ||
         config.control.telemetry_rate_hz > 100.0f) {
         result.fail("control.telemetry_rate_hz must be within (0, 100]");
@@ -146,6 +158,31 @@ ConfigValidation validateConfig(const NavigationConfig& config) {
     const char* drive_problem = validateDifferentialDriveConfig(config.drive);
     if (drive_problem != nullptr) {
         result.fail(drive_problem);
+        return result;
+    }
+
+    WheelEncoderTracker left_encoder;
+    WheelEncoderTracker right_encoder;
+    if (!left_encoder.configure(config.encoder_left) ||
+        !right_encoder.configure(config.encoder_right)) {
+        result.fail("encoder configuration is invalid");
+        return result;
+    }
+    DifferentialOdometry odometry;
+    if (!odometry.configure(config.odometry)) {
+        result.fail("odometry geometry is invalid");
+        return result;
+    }
+    WheelVelocityController left_wheel_pid;
+    WheelVelocityController right_wheel_pid;
+    if (!left_wheel_pid.configure(config.wheel_pid_left) ||
+        !right_wheel_pid.configure(config.wheel_pid_right)) {
+        result.fail("wheel velocity PID configuration is invalid");
+        return result;
+    }
+    if (!isFinite(config.initial_pose.x_m) || !isFinite(config.initial_pose.y_m) ||
+        !isFinite(config.initial_pose.heading_rad)) {
+        result.fail("odometry.initial_pose values must be finite");
         return result;
     }
 

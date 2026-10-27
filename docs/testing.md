@@ -4,7 +4,7 @@
 
 ```bat
 pio test -e native                       :: all C++ suites
-pio test -e native -f test_dijkstra      :: one suite
+pio test -e native -f test_graph_dijkstra  :: one suite
 pio test -e native -f test_integration   :: one suite
 ```
 
@@ -15,11 +15,12 @@ pio test -e native -f test_integration   :: one suite
 | `test_waypoint_fsm` | `tests/test_waypoint_fsm/` | waypoint progression, destination detection, snap-to-nearest, passed-waypoint detection, remaining distance and cross-track, lookahead, deviation confirmation and cooldown, heading estimation, follower behaviour, position validation rules, the full FSM (boot sequence, invalid destination, unreachable destination, position timeout, E-stop, cancel/stop, invalid config, snap limit, replan), JSON parsing, providers, config loading, telemetry contract |
 | `test_command_parser` | `tests/test_command_parser/` | console command parsing (including that position JSON is never mistaken for a command) and the shared route fixtures |
 | `test_stepper` | `tests/test_stepper/` | STEP-rate/RPM/velocity conversion, steps per meter, configuration validation, continuous mode, DDS step accumulation, direction and inversion, position mode (exact stop, deceleration profile, negative moves), differential stepper drive, spin-in-place producing ~0 translational odometry |
+| `test_encoder_odometry` | `tests/test_encoder_odometry/` | AS5600 wrap/inversion/ratio/health, measured wheel RPM, wheel-velocity PID fail-safe behaviour, differential odometry, and explicit heading input |
 | `test_integration` | `tests/test_integration/` | the complete pipeline with a plant in the loop |
 
-Current status: **113 test cases, all passing**
+Current status: **121 test cases, all passing**
 (graph_dijkstra 17 + geometry_pid_drive 20 + waypoint_fsm 35 + command_parser 10 +
-stepper 19 + integration 12).
+stepper 19 + encoder_odometry 8 + integration 12).
 
 ## 2. Integration tests
 

@@ -51,6 +51,7 @@ public:
     void clearEmergencyStop();
     /// Force a replan on the next cycle (operator "replan" command).
     void requestReplan();
+    bool setHeadingPidGains(float kp, float ki, float kd);
 
     /// Destination that was active when the emergency stop was engaged (-1 when
     /// none).  Exposed so the status/telemetry layer can report it.

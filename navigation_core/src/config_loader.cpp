@@ -184,6 +184,15 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
 
     const JsonValue position = root.member("position");
     if (position.isObject()) {
+        char source[32] = "real_uwb";
+        position.member("source").asString(source, sizeof(source));
+        if (std::strcmp(source, "encoder_odometry") == 0) {
+            config.position_source = PositionSourceMode::ENCODER_ODOMETRY;
+        } else if (std::strcmp(source, "external_mock_uwb") == 0) {
+            config.position_source = PositionSourceMode::EXTERNAL_MOCK_UWB;
+        } else {
+            config.position_source = PositionSourceMode::REAL_UWB;
+        }
         readFloat(position, "minimum_quality", config.position.minimum_quality);
         const JsonValue timeout = position.member("timeout_ms");
         if (timeout.isNumber()) {
@@ -257,6 +266,66 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
         readFloat(robot, "right_gain", config.drive.right_gain);
     }
 
+    const JsonValue encoders = root.member("encoders");
+    if (encoders.isObject()) {
+        auto readEncoder = [](const JsonValue& block, WheelEncoderConfig& encoder) {
+            if (!block.isObject()) return;
+            const JsonValue counts = block.member("counts_per_revolution");
+            if (counts.isNumber()) encoder.counts_per_revolution = counts.asInt(encoder.counts_per_revolution);
+            readFloat(block, "sensor_to_wheel_ratio", encoder.sensor_to_wheel_ratio);
+            readFloat(block, "velocity_filter_alpha", encoder.velocity_filter_alpha);
+            readFloat(block, "max_abs_sensor_rpm", encoder.max_abs_sensor_rpm);
+            const JsonValue stale = block.member("stale_timeout_ms");
+            if (stale.isNumber()) encoder.stale_timeout_ms =
+                static_cast<uint32_t>(stale.asInt(static_cast<int>(encoder.stale_timeout_ms)));
+            const JsonValue invert = block.member("invert_direction");
+            if (invert.isBoolean()) encoder.invert_direction = invert.asBool(encoder.invert_direction);
+        };
+        readEncoder(encoders.member("common"), config.encoder_left);
+        readEncoder(encoders.member("common"), config.encoder_right);
+        readEncoder(encoders.member("left"), config.encoder_left);
+        readEncoder(encoders.member("right"), config.encoder_right);
+    }
+
+    const JsonValue wheel_control = root.member("wheel_velocity_control");
+    if (wheel_control.isObject()) {
+        config.wheel_closed_loop_enabled =
+            wheel_control.member("enabled").asBool(config.wheel_closed_loop_enabled);
+        auto readWheelPid = [](const JsonValue& block, WheelVelocityControlConfig& wheel) {
+            if (!block.isObject()) return;
+            readFloat(block, "kp", wheel.pid.kp);
+            readFloat(block, "ki", wheel.pid.ki);
+            readFloat(block, "kd", wheel.pid.kd);
+            readFloat(block, "derivative_filter_alpha", wheel.pid.derivative_filter_alpha);
+            float integral_limit = wheel.pid.integral_max;
+            readFloat(block, "integral_limit_rpm", integral_limit);
+            wheel.pid.integral_min = -integral_limit;
+            wheel.pid.integral_max = integral_limit;
+            readFloat(block, "max_abs_rpm", wheel.max_abs_rpm);
+            readFloat(block, "zero_deadband_rpm", wheel.zero_deadband_rpm);
+            readFloat(block, "tracking_error_rpm", wheel.tracking_error_rpm);
+            const JsonValue timeout = block.member("tracking_error_timeout_ms");
+            if (timeout.isNumber()) wheel.tracking_error_timeout_ms =
+                static_cast<uint32_t>(timeout.asInt(static_cast<int>(wheel.tracking_error_timeout_ms)));
+        };
+        readWheelPid(wheel_control.member("common"), config.wheel_pid_left);
+        readWheelPid(wheel_control.member("common"), config.wheel_pid_right);
+        readWheelPid(wheel_control.member("left"), config.wheel_pid_left);
+        readWheelPid(wheel_control.member("right"), config.wheel_pid_right);
+    }
+
+    config.odometry.wheel_radius_m = config.drive.wheel_radius_m;
+    config.odometry.wheel_track_m = config.drive.wheel_base_m;
+    const JsonValue odometry = root.member("odometry");
+    if (odometry.isObject()) {
+        const JsonValue pose = odometry.member("initial_pose");
+        if (pose.isObject()) {
+            readFloat(pose, "x_m", config.initial_pose.x_m);
+            readFloat(pose, "y_m", config.initial_pose.y_m);
+            readFloat(pose, "heading_rad", config.initial_pose.heading_rad);
+        }
+    }
+
     // Actuator selection and stepper parameters.
     char drive_kind[24] = "pwm_h_bridge";
     root.member("drive_kind").asString(drive_kind, sizeof(drive_kind));
@@ -303,6 +372,7 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
     const JsonValue control = root.member("control");
     if (control.isObject()) {
         readFloat(control, "navigation_rate_hz", config.control.navigation_rate_hz);
+        readFloat(control, "wheel_rate_hz", config.control.wheel_rate_hz);
         readFloat(control, "telemetry_rate_hz", config.control.telemetry_rate_hz);
     }
 
@@ -332,6 +402,8 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
     config.heading_pid.output_min = -config.motion.max_angular_speed_radps;
     config.heading_pid.output_max = config.motion.max_angular_speed_radps;
     config.heading_pid.nominal_dt_s = 1.0f / config.control.navigation_rate_hz;
+    config.wheel_pid_left.pid.nominal_dt_s = 1.0f / config.control.wheel_rate_hz;
+    config.wheel_pid_right.pid.nominal_dt_s = 1.0f / config.control.wheel_rate_hz;
 
     const ConfigValidation validation = validateConfig(config);
     if (!validation.valid) {

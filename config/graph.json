@@ -3,91 +3,91 @@
     "map_id": "SMART_MARKET_MAIN",
     "map_version": 1,
     "frame_id": "smart_market_map",
-    "width_m": 12.0,
-    "height_m": 8.0
+    "width_m": 15.0,
+    "height_m": 9.0
   },
   "nodes": [
     {
       "id": 1,
       "x_m": 1.5,
-      "y_m": 2.0,
+      "y_m": 1.5,
       "type": "entry",
       "name": "masuk"
     },
     {
       "id": 2,
-      "x_m": 4.5,
-      "y_m": 2.0,
+      "x_m": 5.5,
+      "y_m": 1.5,
       "type": "aisle",
       "name": "lorong-a1"
     },
     {
       "id": 3,
-      "x_m": 7.5,
-      "y_m": 2.0,
+      "x_m": 9.5,
+      "y_m": 1.5,
       "type": "aisle",
       "name": "lorong-a2"
     },
     {
       "id": 4,
-      "x_m": 10.5,
-      "y_m": 2.0,
+      "x_m": 13.5,
+      "y_m": 1.5,
       "type": "checkout",
       "name": "kasir"
     },
     {
       "id": 5,
       "x_m": 1.5,
-      "y_m": 4.0,
+      "y_m": 4.5,
       "type": "intersection",
       "name": "persimpangan-b1"
     },
     {
       "id": 6,
-      "x_m": 4.5,
-      "y_m": 4.0,
+      "x_m": 5.5,
+      "y_m": 4.5,
       "type": "intersection",
       "name": "persimpangan-b2"
     },
     {
       "id": 7,
-      "x_m": 7.5,
-      "y_m": 4.0,
+      "x_m": 9.5,
+      "y_m": 4.5,
       "type": "intersection",
       "name": "persimpangan-b3"
     },
     {
       "id": 8,
-      "x_m": 10.5,
-      "y_m": 4.0,
+      "x_m": 13.5,
+      "y_m": 4.5,
       "type": "intersection",
       "name": "persimpangan-b4"
     },
     {
       "id": 9,
       "x_m": 1.5,
-      "y_m": 6.0,
+      "y_m": 7.5,
       "type": "aisle",
       "name": "lorong-c1"
     },
     {
       "id": 10,
-      "x_m": 4.5,
-      "y_m": 6.0,
+      "x_m": 5.5,
+      "y_m": 7.5,
       "type": "destination",
       "name": "produk-susu"
     },
     {
       "id": 11,
-      "x_m": 7.5,
-      "y_m": 6.0,
+      "x_m": 9.5,
+      "y_m": 7.5,
       "type": "destination",
       "name": "produk-roti"
     },
     {
       "id": 12,
-      "x_m": 10.5,
-      "y_m": 6.0,
+      "x_m": 13.5,
+      "y_m": 7.5,
       "type": "parking",
       "name": "parkir"
     }
@@ -99,53 +99,23 @@
       "bidirectional": true
     },
     {
-      "from": 2,
-      "to": 3,
-      "bidirectional": true
-    },
-    {
-      "from": 3,
-      "to": 4,
-      "bidirectional": true
-    },
-    {
-      "from": 5,
-      "to": 6,
-      "bidirectional": true
-    },
-    {
-      "from": 6,
-      "to": 7,
-      "bidirectional": true
-    },
-    {
-      "from": 7,
-      "to": 8,
-      "bidirectional": true
-    },
-    {
-      "from": 9,
-      "to": 10,
-      "bidirectional": true
-    },
-    {
-      "from": 10,
-      "to": 11,
-      "bidirectional": true
-    },
-    {
-      "from": 11,
-      "to": 12,
-      "bidirectional": true
-    },
-    {
       "from": 1,
       "to": 5,
       "bidirectional": true
     },
     {
       "from": 2,
+      "to": 3,
+      "bidirectional": true
+    },
+    {
+      "from": 2,
       "to": 6,
+      "bidirectional": true
+    },
+    {
+      "from": 3,
+      "to": 4,
       "bidirectional": true
     },
     {
@@ -160,7 +130,17 @@
     },
     {
       "from": 5,
+      "to": 6,
+      "bidirectional": true
+    },
+    {
+      "from": 5,
       "to": 9,
+      "bidirectional": true
+    },
+    {
+      "from": 6,
+      "to": 7,
       "bidirectional": true
     },
     {
@@ -170,11 +150,31 @@
     },
     {
       "from": 7,
+      "to": 8,
+      "bidirectional": true
+    },
+    {
+      "from": 7,
       "to": 11,
       "bidirectional": true
     },
     {
       "from": 8,
+      "to": 12,
+      "bidirectional": true
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "bidirectional": true
+    },
+    {
+      "from": 10,
+      "to": 11,
+      "bidirectional": true
+    },
+    {
+      "from": 11,
       "to": 12,
       "bidirectional": true
     }

@@ -80,14 +80,16 @@ inline constexpr uint32_t kStepperTimerBaseHz = 20000;
 /// position.  Holding torque is not equivalent to available moving torque.
 inline constexpr bool kStepperHoldWhenIdle = true;
 
-// --- Optional quadrature encoders (CLOSED_LOOP_ENCODER mode) ----------------
-//
-// Not used in the default OPEN_LOOP_SIMULATION build; the pins are reserved so
-// the wiring harness does not have to change when encoders are added.
-inline constexpr int kLeftEncoderA = 17;
-inline constexpr int kLeftEncoderB = 18;
-inline constexpr int kRightEncoderA = 8;
-inline constexpr int kRightEncoderB = 9;
+// --- AS5600 wheel encoders --------------------------------------------------
+// Both AS5600 devices have fixed address 0x36, so each one uses a separate
+// ESP32-S3 I2C controller. These assignments remain provisional until checked
+// against the exact N16R8 DevKitC-1 board and wiring harness.
+inline constexpr int kLeftEncoderSda = 17;
+inline constexpr int kLeftEncoderScl = 18;
+inline constexpr int kRightEncoderSda = 8;
+inline constexpr int kRightEncoderScl = 9;
+inline constexpr uint32_t kEncoderI2cFrequencyHz = 400000;
+inline constexpr uint8_t kAs5600Address = 0x36;
 
 // --- Status LED / buzzer (optional operator feedback) -----------------------
 inline constexpr int kStatusLedPin = 2;  // onboard RGB LED data pin on many boards

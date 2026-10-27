@@ -360,7 +360,7 @@ targets (for example mean XTE ≤ 0.10 m on a clean route).
 ## 12. Stepper drivetrain (optional)
 
 `physics.use_stepper_model = true` drives the simulated wheels through the same
-C++ stepper model the A4988 firmware uses, so:
+C++ STEP/DIR model the TB6600 firmware path uses, so:
 
 * the plant cannot accelerate faster than the configured STEP acceleration allows,
 * `wheel_odometry_distance_m` becomes a genuine STEP-pulse measurement,

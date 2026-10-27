@@ -171,6 +171,8 @@ def validate_navigation(document: dict, map_info: dict) -> dict:
     _require(isinstance(document, dict), "navigation.json: root must be an object")
 
     position = document.get("position", {})
+    _require(position.get("source") in {"encoder_odometry", "external_mock_uwb", "real_uwb"},
+             "navigation.json: position.source must be encoder_odometry, external_mock_uwb, or real_uwb")
     quality = _number(position, "minimum_quality", "navigation.json position")
     _require(0.0 <= quality <= 1.0, "navigation.json: position.minimum_quality must be in [0, 1]")
     timeout = _number(position, "timeout_ms", "navigation.json position")
@@ -238,10 +240,38 @@ def validate_navigation(document: dict, map_info: dict) -> dict:
 
     control = document.get("control", {})
     nav_rate = _number(control, "navigation_rate_hz", "navigation.json control")
+    wheel_rate = _number(control, "wheel_rate_hz", "navigation.json control")
     telem_rate = _number(control, "telemetry_rate_hz", "navigation.json control")
     _require(0 < nav_rate <= 200, "navigation.json: control.navigation_rate_hz must be in (0, 200]")
+    _require(20 <= wheel_rate <= 500,
+             "navigation.json: control.wheel_rate_hz must be in [20, 500]")
     _require(0 < telem_rate <= 100,
              "navigation.json: control.telemetry_rate_hz must be in (0, 100]")
+
+    encoders = document.get("encoders", {})
+    encoder_common = encoders.get("common", {})
+    counts = _number(encoder_common, "counts_per_revolution", "navigation.json encoders.common")
+    ratio = _number(encoder_common, "sensor_to_wheel_ratio", "navigation.json encoders.common")
+    alpha = _number(encoder_common, "velocity_filter_alpha", "navigation.json encoders.common")
+    max_encoder_rpm = _number(encoder_common, "max_abs_sensor_rpm", "navigation.json encoders.common")
+    stale = _number(encoder_common, "stale_timeout_ms", "navigation.json encoders.common")
+    _require(counts >= 2 and counts.is_integer(),
+             "navigation.json: encoders.common.counts_per_revolution must be an integer >= 2")
+    _require(ratio > 0, "navigation.json: encoder sensor_to_wheel_ratio must be > 0")
+    _require(0 < alpha <= 1, "navigation.json: encoder velocity_filter_alpha must be in (0, 1]")
+    _require(max_encoder_rpm > 0, "navigation.json: encoder max_abs_sensor_rpm must be > 0")
+    _require(stale > 0, "navigation.json: encoder stale_timeout_ms must be > 0")
+
+    wheel_control = document.get("wheel_velocity_control", {})
+    _require(isinstance(wheel_control.get("enabled"), bool),
+             "navigation.json: wheel_velocity_control.enabled must be boolean")
+    wheel_common = wheel_control.get("common", {})
+    for gain in ("kp", "ki", "kd"):
+        _number(wheel_common, gain, "navigation.json wheel_velocity_control.common")
+    _require(_number(wheel_common, "max_abs_rpm", "navigation.json wheel_velocity_control.common") > 0,
+             "navigation.json: wheel max_abs_rpm must be > 0")
+    _require(_number(wheel_common, "tracking_error_timeout_ms", "navigation.json wheel_velocity_control.common") > 0,
+             "navigation.json: wheel tracking_error_timeout_ms must be > 0")
 
     if "map" in document:
         map_block = document["map"]

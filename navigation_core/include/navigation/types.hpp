@@ -65,6 +65,10 @@ struct PositionMeasurement {
     char frame_id[kFrameFieldSize]{};
     uint64_t timestamp_ms{0};
     Position2D position{};
+    /// Optional externally measured/estimated heading. UWB producers that only
+    /// supply x/y leave heading_valid false; encoder odometry sets it true.
+    float heading_rad{0.0f};
+    bool heading_valid{false};
     float quality{0.0f};
     bool valid{false};
 

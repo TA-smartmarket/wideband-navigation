@@ -1,55 +1,187 @@
 <!doctype html>
-<html lang="en">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Trolley Control Station</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Smart Trolley — Autonomous Navigation</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <header><span class="brand">SMART TROLLEY <b>CONTROL STATION</b></span><span id="status">MODE: SIMULATION · ESP32: DISCONNECTED</span></header>
-  <main>
-    <section class="map-panel">
-      <div class="map-toolbar">
-        <label>Mode <select id="mode"><option value="simulation">SIMULATION</option><option value="hardware">HARDWARE</option></select></label>
-        <label>Start <select id="route-start"></select></label>
-        <label>Destination <select id="route-destination"></select></label>
-        <button id="plan-route">GENERATE DIJKSTRA PATH</button>
-        <span id="route-result">No route planned</span>
+  <div id="boot-screen">
+    <div class="boot-inner">
+      <div class="boot-code">[ AUTONAV // ESP32-S3 ]</div>
+      <div class="boot-title" data-text="SMART TROLLEY">SMART TROLLEY</div>
+      <div class="boot-sub">initialising navigation grid</div>
+      <div class="boot-bar"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div id="app">
+    <main id="viewport" aria-label="Smart Market navigation viewport">
+      <div id="map3d" aria-label="Visualisasi tiga dimensi Smart Market">
+        <div class="scene-loader" id="scene-loading"><span></span><p>BUILDING SPATIAL GRID</p></div>
+        <div class="webgl-fallback hidden" id="webgl-fallback" role="alert"><strong>WEBGL UNAVAILABLE</strong><p>Scene 3D gagal dimulai. Seluruh kontrol tetap tersedia melalui floor-plan editor.</p><button id="fallback-editor" class="primary">OPEN FLOOR PLAN</button></div>
+        <div id="stale-warning"><i></i> TELEMETRY STALE</div>
       </div>
-      <canvas id="map" width="1050" height="690" aria-label="Smart Market map editor"></canvas>
-      <p class="hint">Map editor: drag empty space to create a rack. Drag a selected rack to move it; drag its lower-right handle to resize. Select it to edit details.</p>
-    </section>
-    <aside>
-      <details open><summary>CONNECTION</summary>
-        <div class="grid"><button id="refresh-ports">REFRESH</button><select id="port"><option>Choose COM port</option></select></div>
-        <div class="grid"><input id="baud" value="115200" inputmode="numeric"><button id="connect">CONNECT</button><button id="disconnect">DISCONNECT</button></div>
-        <output id="connection">Not connected</output>
+      <canvas id="map" class="hidden" width="1200" height="760" aria-label="Editor peta Smart Market"></canvas>
+
+      <div id="hud" aria-live="polite">
+        <div class="hud-line"><span class="hud-lamp"></span><strong id="metric-state">IDLE</strong><b class="hud-sep"></b><span id="status"><i></i> SIMULATION READY</span></div>
+        <div class="hud-values"><span>POS <b id="metric-pose">N/A</b></span><span>ROUTE <b id="metric-route">—</b></span><span>UWB <b id="metric-quality">N/A</b></span></div>
+        <span class="hud-meta"><b id="metric-source">simulation</b> · <b id="metric-age">belum ada sampel</b></span>
+      </div>
+
+      <div id="viewbar" aria-label="3D view controls">
+        <button id="reset-view" title="Reset camera">⌂</button>
+        <button id="camera-perspective" class="on" aria-pressed="true">3D</button>
+        <button id="camera-top" aria-pressed="false">TOP</button>
+        <button id="zoom-in" title="Zoom in">＋</button>
+        <button id="zoom-out" title="Zoom out">−</button>
+        <button id="render-toggle" title="Pause rendering">Ⅱ PAUSE</button>
+        <button class="emergency" data-command="estop" title="Emergency stop (Space)">■ E-STOP</button>
+      </div>
+
+      <div id="transformbar" class="hidden" aria-label="Selected obstacle transform">
+        <span id="transform-selection">NO SELECTION</span>
+        <button data-transform="translate" class="on">MOVE</button>
+        <button data-transform="scale">RESIZE</button>
+        <button data-transform="rotate">ROTATE</button>
+      </div>
+
+      <div id="palette" aria-label="Workspace mode">
+        <button id="view-3d" class="pal active" aria-pressed="true"><i class="swatch live"></i> LIVE 3D</button>
+        <button id="view-editor" class="pal" aria-pressed="false"><i class="swatch edit"></i> FLOOR PLAN</button>
+        <button id="add-obstacle" class="pal"><i class="swatch add"></i> ADD RACK</button>
+      </div>
+
+      <details id="legend">
+        <summary>Legend — navigation scene</summary>
+        <div><i class="lg-line route"></i><b>Route</b> Dijkstra preview</div>
+        <div><i class="lg-dot node"></i><b>Node</b> navigation graph</div>
+        <div><i class="lg-box rack"></i><b>Rack</b> static obstacle</div>
+        <div><i class="lg-box trolley"></i><b>Trolley</b> measured pose</div>
       </details>
-      <details open><summary>NAVIGATION & POSE</summary>
-        <div id="navigation" class="readout">State: N/A<br>Route: N/A</div>
-        <div class="three"><div>ODO <span id="odo">N/A</span></div><div>UWB <span id="uwb">N/A</span></div><div>NAV <span id="nav">N/A</span></div></div>
-        <button id="send-destination">SEND DESTINATION</button><button class="danger" data-command="estop">E-STOP</button><button data-command="estop.reset">RESET E-STOP</button>
-      </details>
-      <details open><summary>MANUAL CONTROL</summary>
-        <div class="keyboard">W<br><span>A</span><span>S</span><span>D</span><br><small>Q / E pivot · SPACE E-STOP</small></div>
-        <label>Linear m/s <input id="linear" type="range" min="0.02" max="0.45" value="0.18" step="0.01"><output id="linear-value">0.18</output></label>
-        <label>Turn rad/s <input id="turn" type="range" min="0.1" max="2.2" value="0.8" step="0.1"><output id="turn-value">0.8</output></label>
-        <output>Keyboard commands are held with a heartbeat; releasing keys sends stop.</output>
-      </details>
-      <details><summary>PID TUNING</summary>
-        <div class="pid"><label>Left Kp <input id="left-kp" value="0"></label><label>Ki <input id="left-ki" value="0"></label><label>Kd <input id="left-kd" value="0"></label><button data-pid="left">APPLY LEFT</button></div>
-        <div class="pid"><label>Right Kp <input id="right-kp" value="0"></label><label>Ki <input id="right-ki" value="0"></label><label>Kd <input id="right-kd" value="0"></label><button data-pid="right">APPLY RIGHT</button></div>
-        <button data-command="config.get">LOAD FROM ESP32</button><button data-command="config.save">SAVE TO ESP32</button><button data-command="config.defaults">RESTORE DEFAULTS</button>
-        <div id="wheel-data" class="readout">Wheel telemetry: N/A</div>
-      </details>
-      <details open><summary>SELECTED RACK</summary>
-        <div id="obstacle-fields" class="form"><label>Name <input id="ob-name" disabled></label><label>Width m <input id="ob-width" type="number" min="0.1" step="0.1" disabled></label><label>Depth m <input id="ob-depth" type="number" min="0.1" step="0.1" disabled></label><button id="save-obstacle" disabled>SAVE RACK</button><button id="delete-obstacle" class="danger" disabled>DELETE</button></div>
-      </details>
-      <details><summary>DEBUG EVENTS</summary><ol id="events"></ol></details>
+
+      <div class="editor-help hidden" id="editor-help"><b>FLOOR PLAN EDITOR</b><span>Drag kosong: buat rak · drag rak: pindah · handle kanan bawah: resize</span></div>
+    </main>
+
+    <aside id="panel">
+      <header>
+        <div class="panel-title"><h1>Smart Trolley</h1><span class="clock" id="clock">--:--:--</span></div>
+        <p class="sub">autonomous navigation control station</p>
+        <div class="mode-row">
+          <label>OPERATION MODE<select id="mode"><option value="simulation">SIMULATION</option><option value="hardware">HARDWARE</option></select></label>
+          <span id="connection-mini"><i></i> OFFLINE</span>
+        </div>
+      </header>
+
+      <nav id="tabs" role="tablist">
+        <button data-tab="mission" class="active" role="tab" aria-selected="true">LIVE</button>
+        <button data-tab="drive" role="tab" aria-selected="false">DRIVE</button>
+        <button data-tab="diagnostics" role="tab" aria-selected="false">TUNING</button>
+        <button data-tab="map" role="tab" aria-selected="false">SETUP</button>
+      </nav>
+
+      <section id="panel-mission" class="tab-panel active" data-panel="mission" role="tabpanel">
+        <h3>Mission planner</h3>
+        <div class="route-grid">
+          <label>START NODE<select id="route-start"></select></label>
+          <label>DESTINATION<select id="route-destination"></select></label>
+        </div>
+        <div class="auto-route"><span>AUTO DIJKSTRA</span><small>Jalur diperbarui saat node, rack, start, atau destination berubah.</small></div>
+        <button id="send-destination" class="full" disabled>SEND TO TROLLEY</button>
+        <output id="route-result" class="console-line" aria-live="polite">MENGHITUNG JALUR TERCEPAT…</output>
+
+        <h3>Navigation state</h3>
+        <div id="navigation" class="state-block"><span class="state-indicator"></span><div><small>STATE</small><strong>WAITING FOR DATA</strong><p>Route belum aktif</p></div></div>
+        <table class="kv pose-table"><tbody><tr><th>Odometry</th><td id="odo">N/A</td></tr><tr><th>UWB</th><td id="uwb">N/A</td></tr><tr><th>Navigation</th><td id="nav">N/A</td></tr></tbody></table>
+
+        <h3>Position source</h3>
+        <label>SOURCE<select id="position-source"><option value="encoder_odometry">ENCODER ODOMETRY</option><option value="external_mock_uwb">EXTERNAL MOCK UWB</option><option value="real_uwb">REAL UWB</option></select></label>
+        <button id="apply-position-source" class="full" disabled>STOP &amp; APPLY SOURCE</button>
+        <div class="row btns"><button data-command="navigation.stop" disabled>STOP NAVIGATION</button><button data-command="estop.reset" class="warn" disabled>RESET E-STOP</button></div>
+
+        <h3>ESP32 link</h3>
+        <div class="connection-card" id="connection-card">
+          <div class="connection-heading"><span class="connection-dot"></span><div><strong id="connection-title">ESP32 DISCONNECTED</strong><small id="connection">SIMULATION MODE</small></div><button id="refresh-ports" class="compact">↻</button></div>
+          <div class="connection-grid"><select id="port" aria-label="Serial port"><option value="">SELECT COM PORT</option></select><input id="baud" value="115200" inputmode="numeric" aria-label="Baud rate"></div>
+          <div class="row btns"><button id="connect" class="primary">CONNECT</button><button id="disconnect" disabled>DISCONNECT</button></div>
+        </div>
+      </section>
+
+      <section id="panel-drive" class="tab-panel" data-panel="drive" role="tabpanel" hidden>
+        <h3>Manual override</h3>
+        <div class="teleop-lock" id="teleop-lock"><b>CONTROL INTERLOCKED</b><span>Hubungkan ESP32 dalam hardware mode untuk mengaktifkan gerak manual.</span></div>
+        <div class="drive-pad"><button data-drive="q">Q<small>PIVOT</small></button><button data-drive="w">W<small>FORWARD</small></button><button data-drive="e">E<small>PIVOT</small></button><button data-drive="a">A<small>LEFT</small></button><button data-drive="s">S<small>REVERSE</small></button><button data-drive="d">D<small>RIGHT</small></button></div>
+        <button id="start-manual" class="primary full" disabled>ARM MANUAL CONTROL</button>
+
+        <h3>Motion limits</h3>
+        <div class="range-field"><div><label for="linear">LINEAR SPEED</label><output id="linear-value">0.18 m/s</output></div><input id="linear" type="range" min="0.02" max="0.45" value="0.18" step="0.01"></div>
+        <div class="range-field"><div><label for="turn">TURN RATE</label><output id="turn-value">0.8 rad/s</output></div><input id="turn" type="range" min="0.1" max="2.2" value="0.8" step="0.1"></div>
+        <div class="command-help"><b>W/S</b> forward/reverse · <b>A/D</b> turn · <b>Q/E</b> pivot · <b>SPACE</b> E-stop</div>
+      </section>
+
+      <section id="panel-diagnostics" class="tab-panel" data-panel="diagnostics" role="tabpanel" hidden>
+        <h3>Wheel telemetry</h3>
+        <div id="wheel-data" class="wheel-readout"><p>NO WHEEL TELEMETRY</p></div>
+        <div class="chart-block"><div class="chart-head"><b>WHEEL VELOCITY</b><span>TARGET / ACTUAL RPM</span></div><canvas id="pid-chart" width="520" height="190"></canvas><div class="chart-legend"><span class="lt">L TARGET</span><span class="la">L ACTUAL</span><span class="rt">R TARGET</span><span class="ra">R ACTUAL</span></div></div>
+
+        <h3>PID tuning</h3>
+        <details class="fold" open><summary>HEADING CONTROLLER</summary><div class="input-row"><label>Kp<input id="heading-kp" value="0"></label><label>Ki<input id="heading-ki" value="0"></label><label>Kd<input id="heading-kd" value="0"></label></div><button data-pid="heading" class="full" disabled>APPLY HEADING PID</button></details>
+        <details class="fold"><summary>LEFT WHEEL</summary><div class="input-row"><label>Kp<input id="left-kp" value="0"></label><label>Ki<input id="left-ki" value="0"></label><label>Kd<input id="left-kd" value="0"></label></div><button data-pid="left" class="full" disabled>APPLY LEFT PID</button></details>
+        <details class="fold"><summary>RIGHT WHEEL</summary><div class="input-row"><label>Kp<input id="right-kp" value="0"></label><label>Ki<input id="right-ki" value="0"></label><label>Kd<input id="right-kd" value="0"></label></div><button data-pid="right" class="full" disabled>APPLY RIGHT PID</button></details>
+        <div class="row btns"><button data-command="config.get" disabled>LOAD</button><button data-command="config.save" disabled>SAVE</button><button data-command="config.defaults" disabled>DEFAULTS</button></div>
+
+        <h3>Event log</h3>
+        <ol id="events" class="event-log"><li>NO EVENTS</li></ol>
+      </section>
+
+      <section id="panel-map" class="tab-panel" data-panel="map" role="tabpanel" hidden>
+        <h3>Room dimensions <span class="pill">metres</span></h3>
+        <p class="muted">Node otomatis disusun ulang mengikuti ukuran baru. Resize hanya ditolak jika rack tidak muat di dalam batas ruangan.</p>
+        <div class="input-row"><label>WIDTH X<input id="room-width" type="number" min="1" step="0.1"></label><label>DEPTH Y<input id="room-depth" type="number" min="1" step="0.1"></label><label>HEIGHT Z<input id="room-height" type="number" min="0.5" step="0.1"></label></div>
+        <button id="save-room" class="primary full">SAVE ROOM SIZE</button>
+
+        <h3>Navigation nodes <span class="pill">auto-connect</span></h3>
+        <p class="muted">Tambah dan posisikan node. Reset &amp; auto-fit mempertahankan pola node, lalu menyesuaikannya ke ukuran ruangan dan area bebas rak.</p>
+        <div class="row btns"><button id="add-node" class="primary">ADD NAVIGATION NODE</button><button id="reset-nodes">RESET &amp; AUTO-FIT</button></div>
+        <div id="node-empty" class="empty-state"><b>NO NODE SELECTED</b><span>Klik node pada viewport 3D untuk mengeditnya.</span></div>
+        <div id="node-fields" class="form-stack hidden">
+          <div class="input-row two"><label>NODE ID<input id="node-id" disabled></label><label>TYPE<select id="node-type" disabled><option value="waypoint">WAYPOINT</option><option value="entry">ENTRY</option><option value="destination">DESTINATION</option><option value="intersection">INTERSECTION</option><option value="checkout">CHECKOUT</option><option value="parking">PARKING</option></select></label></div>
+          <label>NODE NAME<input id="node-name" maxlength="64" disabled></label>
+          <div class="input-row two"><label>X POSITION<input id="node-x" type="number" step="0.01" disabled></label><label>Y POSITION<input id="node-y" type="number" step="0.01" disabled></label></div>
+          <p id="node-connections" class="console-line">0 VISIBLE CONNECTIONS</p>
+          <button id="save-node" class="primary full" disabled>SAVE NODE</button><button id="delete-node" class="danger full" disabled>DELETE NODE</button>
+        </div>
+
+        <h3>Floor plan</h3>
+        <p class="muted">Buka floor-plan editor, pilih rak, lalu ubah dimensi atau pemetaan produk.</p>
+        <div class="row btns"><button data-open-editor>OPEN 2D EDITOR</button><button data-add-obstacle class="primary">ADD RACK</button></div>
+        <div id="obstacle-empty" class="empty-state"><b>NOTHING SELECTED</b><span>Pilih rack pada viewport 2D.</span></div>
+        <div id="obstacle-fields" class="form-stack hidden">
+          <label>RACK NAME<input id="ob-name" disabled></label>
+          <div class="input-row two"><label>X POSITION<input id="ob-x" type="number" step="0.01" disabled></label><label>Y POSITION<input id="ob-y" type="number" step="0.01" disabled></label></div>
+          <div class="input-row two"><label>SIZE X<input id="ob-width" type="number" min="0.1" step="0.1" disabled></label><label>SIZE Y<input id="ob-depth" type="number" min="0.1" step="0.1" disabled></label></div>
+          <label>HEIGHT Z<input id="ob-height" type="number" min="0.1" step="0.1" disabled></label>
+          <small class="ground-note">RAK OTOMATIS MENAPAK DI LANTAI</small>
+          <label>ROTATION °<input id="ob-rotation" type="number" step="1" disabled></label>
+          <label>ATTENUATION <output id="ob-atten-value">1.00</output><input id="ob-atten" type="range" min="0" max="1" step="0.01" value="1" disabled></label>
+          <label>PRODUCTS<textarea id="ob-products" rows="4" placeholder="Susu@10, Roti@11" disabled></textarea><small>FORMAT: NAME@NODE, COMMA SEPARATED</small></label>
+          <button id="save-obstacle" class="primary full" disabled>SAVE RACK</button><button id="delete-obstacle" class="danger full" disabled>DELETE RACK</button>
+        </div>
+
+        <h3>Odometry calibration</h3>
+        <div class="input-row"><label>X M<input id="pose-x" type="number" step="0.01" value="0"></label><label>Y M<input id="pose-y" type="number" step="0.01" value="0"></label><label>HEADING<input id="pose-heading" type="number" step="0.01" value="0"></label></div>
+        <button id="set-pose" class="full" disabled>STOP &amp; SET POSE</button><button data-command="encoder.zero" class="full" disabled>STOP &amp; ZERO ENCODERS</button>
+      </section>
+
+      <footer><p><b>DRAG</b> orbit · <b>RIGHT DRAG</b> pan · <b>SCROLL</b> zoom · <b>H</b> reset view<br><b>WASD / QE</b> manual drive · <b>SPACE</b> emergency stop</p><span id="footer">UI -- HZ · PROTOCOL V1</span></footer>
     </aside>
-  </main>
-  <footer id="footer">UI update: -- Hz · Telemetry: -- · Protocol v1</footer>
-  <script src="/static/app.js"></script>
+  </div>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+  <script type="importmap">{"imports":{"three":"/vendor/three/three.module.min.js"}}</script>
+  <script type="module" src="/static/app.js"></script>
 </body>
 </html>

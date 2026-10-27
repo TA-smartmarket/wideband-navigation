@@ -160,6 +160,28 @@ void PathFollower::updateHeading(const Position2D& position, float position_qual
     }
 }
 
+void PathFollower::setMeasuredHeading(float heading_rad) {
+    if (!isFinite(heading_rad)) return;
+    heading_rad_ = normalizeAngle(heading_rad);
+    has_heading_ = true;
+    seconds_since_correction_ = 0.0f;
+}
+
+bool PathFollower::setHeadingPidGains(float kp, float ki, float kd) {
+    if (!isFinite(kp) || !isFinite(ki) || !isFinite(kd) ||
+        kp < 0.0f || kp > 10.0f || ki < 0.0f || ki > 10.0f ||
+        kd < 0.0f || kd > 10.0f) {
+        return false;
+    }
+    config_.heading_pid.kp = kp;
+    config_.heading_pid.ki = ki;
+    config_.heading_pid.kd = kd;
+    config_.motion.heading_kp = kp;
+    heading_pid_.setConfig(config_.heading_pid);
+    heading_pid_.reset();
+    return true;
+}
+
 float PathFollower::headingDeadbandScale(float heading_error_rad) const {
     const float deadband = config_.motion.heading_deadband_deg * kDegToRad;
     if (deadband <= 0.0f) {

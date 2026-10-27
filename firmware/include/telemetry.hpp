@@ -16,6 +16,7 @@
 #include "navigation/command_parser.hpp"
 #include "navigation/navigation_fsm.hpp"
 #include "navigation/telemetry.hpp"
+#include "wheel_control.hpp"
 
 namespace firmware {
 
@@ -45,6 +46,8 @@ public:
 
     /// Emit one JSON telemetry line (the documented contract).
     void publishJson(const nav::NavigationStatus& status, uint64_t timestamp_ms);
+    /// Emit measured AS5600, wheel-PID, STEP and encoder-odometry telemetry.
+    void publishWheelJson(const WheelControlSnapshot& status, uint64_t timestamp_ms);
 
     /// Emit the human readable status block (the `status` command).
     void publishStatusText(const nav::NavigationStatus& status);

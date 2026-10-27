@@ -226,6 +226,15 @@ void NavigationFsm::requestReplan() {
     NAV_LOG_INFO(kTag, "replan requested by operator");
 }
 
+bool NavigationFsm::setHeadingPidGains(float kp, float ki, float kd) {
+    if (!follower_.setHeadingPidGains(kp, ki, kd)) return false;
+    config_.heading_pid.kp = kp;
+    config_.heading_pid.ki = ki;
+    config_.heading_pid.kd = kd;
+    config_.motion.heading_kp = kp;
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // inputs
 // ---------------------------------------------------------------------------
@@ -252,6 +261,11 @@ MeasurementStatus NavigationFsm::submitPosition(const PositionMeasurement& measu
     has_position_ = true;
     last_accepted_ms_ = now_ms;
     status_.position_quality = measurement.quality;
+    if (measurement.heading_valid) {
+        follower_.setMeasuredHeading(measurement.heading_rad);
+        status_.heading_rad = normalizeAngle(measurement.heading_rad);
+        status_.heading_valid = true;
+    }
 
     // Accumulate the actually travelled distance while navigating; the ground
     // truth is never used for this, only accepted measurements.

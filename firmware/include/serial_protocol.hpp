@@ -23,6 +23,10 @@ enum class DashboardCommandKind {
     CONFIG_GET,
     CONFIG_SAVE,
     CONFIG_DEFAULTS,
+    PID_SET,
+    POSITION_SOURCE,
+    ENCODER_ZERO,
+    ODOMETRY_SET_POSE,
 };
 
 struct DashboardCommand {
@@ -30,6 +34,15 @@ struct DashboardCommand {
     float linear_mps{0.0f};
     float angular_radps{0.0f};
     int node_id{-1};
+    bool right_wheel{false};
+    bool heading_pid{false};
+    float kp{0.0f};
+    float ki{0.0f};
+    float kd{0.0f};
+    int position_source{-1};
+    float pose_x_m{0.0f};
+    float pose_y_m{0.0f};
+    float pose_heading_rad{0.0f};
 };
 
 /// Parse one NDJSON object.  Returns false for invalid/unsupported input and

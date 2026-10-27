@@ -82,6 +82,7 @@
 /// Navigation control rate.  Matches control.navigation_rate_hz in
 /// config/navigation.json; the control loop measures the real dt anyway.
 constexpr uint32_t NAVIGATION_PERIOD_MS = 50;   // 20 Hz
+constexpr uint32_t WHEEL_CONTROL_PERIOD_MS = 10;  // 100 Hz
 constexpr uint32_t TELEMETRY_PERIOD_MS = 200;   // 5 Hz
 constexpr uint32_t POSITION_PERIOD_MS = 20;     // 50 Hz poll of the RX queue
 
@@ -92,10 +93,12 @@ constexpr int NAVIGATION_TASK_CORE = 1;
 constexpr int COMMUNICATION_TASK_CORE = 0;
 
 constexpr uint32_t NAVIGATION_TASK_STACK = 8192;
+constexpr uint32_t WHEEL_CONTROL_TASK_STACK = 6144;
 constexpr uint32_t COMMUNICATION_TASK_STACK = 4096;
 constexpr uint32_t TELEMETRY_TASK_STACK = 6144;
 
 constexpr UBaseType_t NAVIGATION_TASK_PRIORITY = 5;   // highest: control loop
+constexpr UBaseType_t WHEEL_CONTROL_TASK_PRIORITY = 6;
 constexpr UBaseType_t POSITION_TASK_PRIORITY = 4;
 constexpr UBaseType_t TELEMETRY_TASK_PRIORITY = 2;
 constexpr UBaseType_t COMMAND_TASK_PRIORITY = 3;

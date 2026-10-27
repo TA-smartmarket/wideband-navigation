@@ -53,6 +53,14 @@ struct FirmwareContext {
     volatile bool command_clear_estop{false};
     volatile bool command_replan{false};
     volatile int command_destination{-1};
+    volatile int command_position_source{-1};
+    volatile bool command_encoder_zero{false};
+    volatile bool command_set_pose{false};
+    volatile bool command_manual_update{false};
+    volatile float command_pose_x_m{0.0f};
+    volatile float command_pose_y_m{0.0f};
+    volatile float command_pose_heading_rad{0.0f};
+    volatile nav::PositionSourceMode position_source{nav::PositionSourceMode::REAL_UWB};
 
     /// Dashboard manual control.  The navigation task is the only task that
     /// reads and actuates these values; serial RX merely updates the latest

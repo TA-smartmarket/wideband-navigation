@@ -64,14 +64,27 @@ void StepperMotorDriver::startPulseTimer() {
     // A STEP is generated over two timer edges.  At the configured 20 kHz
     // maximum rate, the fixed high phase is 25 us: safe for TB6600 optocoupler
     // inputs and independent from FreeRTOS scheduling or serial traffic.
-    pulse_timer_ = timerBegin(kStepperTimerBaseHz * 2u);
+    // PlatformIO pins Arduino-ESP32 2.0.x, whose timer API takes a timer
+    // number and an APB-clock divider.  A divider of 80 produces a 1 MHz
+    // counter from the ESP32's 80 MHz APB clock.  The ISR runs at twice the
+    // configured maximum STEP rate because one interrupt raises STEP and the
+    // next lowers it.
+    constexpr uint32_t kTimerCounterHz = 1000000u;
+    constexpr uint32_t kInterruptRateHz = kStepperTimerBaseHz * 2u;
+    static_assert(kTimerCounterHz % kInterruptRateHz == 0,
+                  "STEP timer period must be an integer number of ticks");
+    constexpr uint64_t kAlarmTicks = kTimerCounterHz / kInterruptRateHz;
+
+    pulse_timer_ = timerBegin(/*timer=*/0, /*divider=*/80, /*countUp=*/true);
     if (pulse_timer_ == nullptr) {
         enabled_ = false;
         NAV_LOG_ERROR(kTag, "cannot allocate STEP hardware timer");
         return;
     }
-    timerAttachInterrupt(pulse_timer_, &StepperMotorDriver::timerThunk);
-    timerAlarm(pulse_timer_, 1, true, 0);
+    timerAttachInterrupt(pulse_timer_, &StepperMotorDriver::timerThunk,
+                         /*edge=*/true);
+    timerAlarmWrite(pulse_timer_, kAlarmTicks, /*autoReload=*/true);
+    timerAlarmEnable(pulse_timer_);
 }
 
 void IRAM_ATTR StepperMotorDriver::timerThunk() {

@@ -156,7 +156,7 @@ NAV_API int nav_get_telemetry_json(nav_handle handle, const char* trolley_id, ui
 NAV_API int nav_get_status_text(nav_handle handle, const char* trolley_id, char* out, int out_size);
 
 // ---------------------------------------------------------------------------
-// Stepper (NEMA 17 + A4988 class) - standalone, no navigation session needed
+// Generic STEP/DIR stepper model - standalone, no navigation session needed
 // ---------------------------------------------------------------------------
 //
 // Exposed so the simulator can integrate genuine step-based wheel odometry and

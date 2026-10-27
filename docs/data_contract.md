@@ -17,6 +17,8 @@ values are never consumed by navigation.
   "frame_id": "smart_market_map",
   "timestamp_ms": 1000,
   "position": { "x_m": 1.25, "y_m": 2.70 },
+  "heading_rad": 0.0,
+  "heading_valid": false,
   "quality": 0.95,
   "valid": true
 }
@@ -30,6 +32,8 @@ values are never consumed by navigation.
 | `timestamp_ms` | integer | yes | monotonic milliseconds, non-zero |
 | `position.x_m` | number | yes | meters, `+X` right |
 | `position.y_m` | number | yes | meters, `+Y` up |
+| `heading_rad` | number | no | optional measured/estimated heading, radians CCW from +X |
+| `heading_valid` | boolean | no | true only when `heading_rad` is supplied by the active pose source |
 | `quality` | number | yes | $[0, 1]$ confidence |
 | `valid` | boolean | yes | `false` = unusable measurement |
 
@@ -176,6 +180,24 @@ Operator or host commands, one per line. An optional `CMD:` prefix is accepted.
 | `clear_estop` | clear the E-stop (does not resume motion) |
 | `replan` | force a replan on the next cycle |
 | `debug on` / `debug off` | verbose logging |
+| dashboard `pid.set` | apply bounded left/right wheel PID gains; resets that controller state |
+| dashboard `config.get` | return active configuration and revision |
+| dashboard `config.save` | persist the active small runtime configuration to NVS |
+| dashboard `config.defaults` | clear NVS overlay; reboot is required |
+| dashboard `position.source` | stop navigation and select encoder, mock UWB, or real UWB input |
+| dashboard `encoder.zero` | stop motion and zero AS5600/STEP counters while retaining pose |
+| dashboard `odometry.set_pose` | stop motion and rebase odometry to finite x/y/heading values |
+
+### Wheel-control telemetry
+
+Firmware emits a second NDJSON packet with `type: "wheel_telemetry"`. It carries
+left/right target and measured RPM, error, P/I/D terms, corrected RPM output,
+saturation and tracking-fault flags, raw AS5600 counts, measured revolutions,
+STEP pulse counts, deadline misses, and `odometry_pose`. The latter always has
+`"estimated": true`; STEP counts are not presented as measured wheel travel.
+
+The dashboard merges this packet into its current hardware view but records the
+original packet unchanged in JSONL experiment logs.
 
 JSON position lines are never mistaken for commands (they start with `{`, or are
 explicitly prefixed `POS:`). A malformed command argument is reported, not
@@ -259,12 +281,19 @@ Two keys select and shape the actuator:
 }
 ```
 
-* `drive_kind` is `"stepper"` (NEMA 17 + A4988, step/dir) or `"pwm_h_bridge"`
+* `drive_kind` is `"stepper"` (NEMA23 + TB6600, STEP/DIR) or `"pwm_h_bridge"`
   (DC motor, duty cycle). The navigation algorithms are identical either way.
-* `microsteps` must match the A4988 MS1/MS2/MS3 wiring (1, 2, 4, 8, 16).
+* `microsteps` must match the TB6600 DIP setting.
 * `max_step_rate_hz` must not exceed the firmware STEP timer base
   (`kStepperTimerBaseHz`, 20 kHz), or the pulse train cannot be generated.
 * `invert_direction` flips the DIR level for a motor mounted mirrored.
+* `position.source` is one of `real_uwb`, `external_mock_uwb`, or
+  `encoder_odometry`.
+* `encoders` configures AS5600 resolution, axle ratio, direction, filtering,
+  plausible-speed bound, and stale timeout.
+* `wheel_velocity_control` configures independent left/right PID controllers,
+  output limits, zero deadband, and persistent tracking-error detection.
+* `control.wheel_rate_hz` defaults to 100 Hz and is validated within 20–500 Hz.
 
 See [README §11](../README.md#11-configuration-parameters) for the rest of the
 parameter table. Every value is range-checked; a failure yields `CONFIG_INVALID` and the

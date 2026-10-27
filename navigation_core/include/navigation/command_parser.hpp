@@ -30,7 +30,7 @@ enum class CommandKind {
     REPLAN,
     DEBUG_ON,
     DEBUG_OFF,
-    // Stepper bench control (NEMA 17 + A4988): position, direction and RPM.
+    // Generic STEP/DIR bench control (NEMA23 + TB6600 in this project).
     RPM,
     MOVE_REVOLUTIONS,
     ZERO_POSITION,

@@ -21,6 +21,7 @@
 
 #include "app_config.hpp"
 #include "app_context.hpp"
+#include "config_store.hpp"
 #include "motor_driver.hpp"
 #include "navigation/config_loader.hpp"
 #include "navigation/logging.hpp"
@@ -31,6 +32,7 @@
 #include "serial_protocol.hpp"
 #include "stepper_driver.hpp"
 #include "telemetry.hpp"
+#include "wheel_control.hpp"
 
 #if CONFIG_FREERTOS_USE_TASK_WATCHDOG
 #include <esp_task_wdt.h>
@@ -60,40 +62,39 @@ void serialLogSink(nav::LogLevel level, const char* tag, const char* message) {
 void taskPosition(void*) {
     FirmwareContext& ctx = context();
 
-    ArduinoStreamAdapter console_stream(Serial);
-    nav::SerialPositionProvider serial_provider(&console_stream, TROLLEY_ID);
-
 #if NAVIGATION_POSITION_TRANSPORT == 1
     // HTTP pull from the positioning server (GET /api/v1/navigation/position).
     static firmware::HttpPositionProvider http_provider(NAVIGATION_SERVER_URL, TROLLEY_ID);
-    nav::IPositionProvider& provider = http_provider;
-    NAV_LOG_INFO("POS", "position source: %s @ %s", provider.name(), NAVIGATION_SERVER_URL);
+    nav::IPositionProvider& real_provider = http_provider;
+    NAV_LOG_INFO("POS", "real position adapter: %s @ %s", real_provider.name(), NAVIGATION_SERVER_URL);
 #elif NAVIGATION_POSITION_TRANSPORT == 2
     // MQTT push from the positioning server (topic <base>/navigation/position).
     static firmware::MqttPositionProvider mqtt_provider(
         NAVIGATION_MQTT_HOST, NAVIGATION_MQTT_PORT, NAVIGATION_MQTT_TOPIC, TROLLEY_ID);
-    nav::IPositionProvider& provider = mqtt_provider;
-    NAV_LOG_INFO("POS", "position source: %s @ %s:%u topic '%s'",
-                 provider.name(), NAVIGATION_MQTT_HOST, NAVIGATION_MQTT_PORT, NAVIGATION_MQTT_TOPIC);
-#elif NAVIGATION_USE_MOCK_POSITION
-    // Development mode: mock UWB JSON lines arrive on the console UART.
-    nav::IPositionProvider& provider = serial_provider;
-    NAV_LOG_INFO("POS", "position source: %s (mock/development mode)", provider.name());
+    nav::IPositionProvider& real_provider = mqtt_provider;
+    NAV_LOG_INFO("POS", "real position adapter: %s @ %s:%u topic '%s'",
+                 real_provider.name(), NAVIGATION_MQTT_HOST, NAVIGATION_MQTT_PORT, NAVIGATION_MQTT_TOPIC);
 #else
     // Integration mode: the real UWB/EKF subsystem on UART1, same JSON contract.
     static HardwareSerial uwb_serial(1);
     uwb_serial.begin(kUwbUartBaud, SERIAL_8N1, kUwbUartRxPin, kUwbUartTxPin);
-    static RealPositionProvider real_provider(uwb_serial, TROLLEY_ID);
-    nav::IPositionProvider& provider = real_provider;
-    NAV_LOG_INFO("POS", "position source: %s on UART1 rx=%d tx=%d @ %u baud",
-                 provider.name(), kUwbUartRxPin, kUwbUartTxPin, kUwbUartBaud);
+    static RealPositionProvider uart_provider(uwb_serial, TROLLEY_ID);
+    nav::IPositionProvider& real_provider = uart_provider;
+    NAV_LOG_INFO("POS", "real position adapter: %s on UART1 rx=%d tx=%d @ %u baud",
+                 real_provider.name(), kUwbUartRxPin, kUwbUartTxPin, kUwbUartBaud);
 #endif
 
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
         nav::PositionMeasurement measurement;
         const uint64_t now_ms = nav::monotonicMillis();
-        if (provider.poll(measurement, now_ms)) {
+        bool has_measurement = false;
+        if (ctx.position_source == nav::PositionSourceMode::ENCODER_ODOMETRY) {
+            has_measurement = wheelControl().odometryMeasurement(measurement, now_ms);
+        } else if (ctx.position_source == nav::PositionSourceMode::REAL_UWB) {
+            has_measurement = real_provider.poll(measurement, now_ms);
+        }
+        if (has_measurement) {
             // The FSM performs full validation; the task only forwards the
             // sample together with the local monotonic receive time.
             ctx.latest_position.publish(measurement, now_ms);
@@ -103,11 +104,23 @@ void taskPosition(void*) {
     }
 }
 
+/// Runs AS5600 acquisition, wheel velocity PID, odometry and STEP-rate output.
+/// Navigation only publishes bounded wheel targets; this task owns feedback
+/// control at 100 Hz and stops the actuator on any encoder fault.
+void taskWheelControl(void*) {
+    TickType_t last_wake = xTaskGetTickCount();
+    for (;;) {
+        wheelControl().update(nav::monotonicNanos() / 1000ull);
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(WHEEL_CONTROL_PERIOD_MS));
+    }
+}
+
 /// Parses console commands and raises the corresponding flags.
 void taskCommands(void*) {
     FirmwareContext& ctx = context();
     char line[SERIAL_LINE_BUFFER];
     std::size_t length = 0;
+    nav::SerialPositionProvider mock_line_parser(nullptr, TROLLEY_ID);
 
     for (;;) {
         while (Serial.available() > 0) {
@@ -118,23 +131,36 @@ void taskCommands(void*) {
                 }
                 line[length] = '\0';
                 nav::ParsedCommand command;
-                // UWB samples use the documented schema and do not have a
-                // command `type`; leave them quiet when a mock build shares
-                // USB serial with the position reader.
-                if (line[0] == '{' && std::strstr(line, "\"type\"") != nullptr) {
+                const bool looks_like_position =
+                    std::strncmp(line, "POS:", 4) == 0 ||
+                    (line[0] == '{' && std::strstr(line, "\"schema_version\"") != nullptr &&
+                     std::strstr(line, "\"position\"") != nullptr);
+                if (ctx.position_source == nav::PositionSourceMode::EXTERNAL_MOCK_UWB &&
+                    looks_like_position) {
+                    nav::PositionMeasurement measurement;
+                    if (mock_line_parser.parseLine(line, length, measurement)) {
+                        ctx.latest_position.publish(measurement, nav::monotonicMillis());
+                        ++ctx.position_samples;
+                    } else {
+                        ++g_malformed_position_lines;
+                        Serial.println("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"invalid mock position\"}");
+                    }
+                } else if (line[0] == '{' && std::strstr(line, "\"type\"") != nullptr) {
                     DashboardCommand dashboard_command;
                     char dashboard_error[96] = {};
                     if (parseDashboardCommand(line, dashboard_command, dashboard_error, sizeof(dashboard_error))) {
                         switch (dashboard_command.kind) {
                             case DashboardCommandKind::HELLO:
-                                Serial.printf("{\"type\":\"ack\",\"protocol_version\":%u,\"message\":\"Smart Trolley firmware %s\"}\n",
-                                              kDashboardProtocolVersion, FIRMWARE_VERSION);
+                                Serial.printf("{\"type\":\"ack\",\"protocol_version\":%u,\"config_revision\":%lu,\"message\":\"Smart Trolley firmware %s\"}\n",
+                                              kDashboardProtocolVersion,
+                                              static_cast<unsigned long>(configStore().revision()),
+                                              FIRMWARE_VERSION);
                                 break;
                             case DashboardCommandKind::MANUAL:
                                 ctx.manual_linear_mps = dashboard_command.linear_mps;
                                 ctx.manual_angular_radps = dashboard_command.angular_radps;
                                 ctx.manual_heartbeat_ms = millis();
-                                ctx.manual_active = true;
+                                ctx.command_manual_update = true;
                                 break;
                             case DashboardCommandKind::ESTOP: ctx.command_estop = true; break;
                             case DashboardCommandKind::RESET_ESTOP: ctx.command_clear_estop = true; break;
@@ -144,12 +170,77 @@ void taskCommands(void*) {
                                 ctx.command_destination = dashboard_command.node_id;
                                 break;
                             case DashboardCommandKind::CONFIG_GET:
+                            {
+                                char config_json[640] = {};
+                                nav::NavigationConfig active = wheelControl().enabled()
+                                    ? wheelControl().configSnapshot() : motorDriverConfig();
+                                active.position_source = ctx.position_source;
+                                configStore().formatJson(active, config_json, sizeof(config_json));
+                                Serial.print(config_json);
+                                break;
+                            }
                             case DashboardCommandKind::CONFIG_SAVE:
+                            {
+                                nav::NavigationConfig active = wheelControl().enabled()
+                                    ? wheelControl().configSnapshot() : motorDriverConfig();
+                                active.position_source = ctx.position_source;
+                                const bool ok = configStore().save(active);
+                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":%lu,\"message\":\"%s\"}\n",
+                                              ok ? "ack" : "error",
+                                              static_cast<unsigned long>(configStore().revision()),
+                                              ok ? "configuration persisted" : "configuration save failed");
+                                break;
+                            }
                             case DashboardCommandKind::CONFIG_DEFAULTS:
-                                // Configuration persistence is intentionally not
-                                // acknowledged until every active field has an
-                                // NVS-backed implementation.
-                                Serial.printf("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"configuration persistence is not available in this firmware build\"}\n");
+                            {
+                                ctx.manual_active = false;
+                                ctx.command_stop = true;
+                                const bool ok = configStore().restoreDefaults();
+                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":0,\"message\":\"%s\"}\n",
+                                              ok ? "ack" : "error",
+                                              ok ? "factory defaults selected; reboot required" : "failed to restore defaults");
+                                break;
+                            }
+                            case DashboardCommandKind::PID_SET:
+                            {
+                                bool ok = true;
+                                if (dashboard_command.heading_pid) {
+                                    ok = false;
+                                    if (xSemaphoreTake(ctx.status_mutex, pdMS_TO_TICKS(20)) == pdTRUE) {
+                                        ok = ctx.fsm.setHeadingPidGains(
+                                            dashboard_command.kp, dashboard_command.ki,
+                                            dashboard_command.kd);
+                                        xSemaphoreGive(ctx.status_mutex);
+                                    }
+                                    ok = ok && wheelControl().recordHeadingPid(
+                                        dashboard_command.kp, dashboard_command.ki,
+                                        dashboard_command.kd);
+                                } else {
+                                    ok = wheelControl().requestPidUpdate(
+                                        dashboard_command.right_wheel, dashboard_command.kp,
+                                        dashboard_command.ki, dashboard_command.kd);
+                                }
+                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"message\":\"%s PID %s\"}\n",
+                                              ok ? "ack" : "error",
+                                              dashboard_command.heading_pid ? "heading" :
+                                              dashboard_command.right_wheel ? "right wheel" : "left wheel",
+                                              ok ? "applied (not yet persisted)" : "rejected");
+                                break;
+                            }
+                            case DashboardCommandKind::POSITION_SOURCE:
+                                ctx.command_position_source = dashboard_command.position_source;
+                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"position source change queued; navigation will stop\"}");
+                                break;
+                            case DashboardCommandKind::ENCODER_ZERO:
+                                ctx.command_encoder_zero = true;
+                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"encoder zero queued; navigation will stop\"}");
+                                break;
+                            case DashboardCommandKind::ODOMETRY_SET_POSE:
+                                ctx.command_pose_x_m = dashboard_command.pose_x_m;
+                                ctx.command_pose_y_m = dashboard_command.pose_y_m;
+                                ctx.command_pose_heading_rad = dashboard_command.pose_heading_rad;
+                                ctx.command_set_pose = true;
+                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"initial pose queued; navigation will stop\"}");
                                 break;
                             default: break;
                         }
@@ -230,6 +321,10 @@ void taskTelemetry(void*) {
             const nav::NavigationStatus status = ctx.fsm.status();
             xSemaphoreGive(ctx.status_mutex);
             ctx.telemetry->publishJson(status, nav::monotonicMillis());
+            if (wheelControl().enabled()) {
+                ctx.telemetry->publishWheelJson(wheelControl().snapshot(),
+                                                nav::monotonicMillis());
+            }
         }
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(TELEMETRY_PERIOD_MS));
     }
@@ -264,7 +359,8 @@ void taskNavigation(void*) {
             // Cut STEP generation/driver enable before the FSM state change.
             // A normal stop is ramped; E-stop must be immediate.
             if (StepperMotorDriver* stepper = stepperDriver()) {
-                stepper->emergencyStop();
+                if (wheelControl().enabled()) wheelControl().emergencyStop();
+                else stepper->emergencyStop();
             } else {
                 motors.stop();
             }
@@ -275,24 +371,70 @@ void taskNavigation(void*) {
         if (ctx.command_clear_estop) {
             ctx.command_clear_estop = false;
             ctx.fsm.clearEmergencyStop();
-            motors.stop();
+            if (wheelControl().enabled()) wheelControl().clearEmergencyStop(); else motors.stop();
             ctx.telemetry->publishEvent("ESTOP", "emergency stop cleared (start required)");
         }
         if (ctx.command_cancel) {
             ctx.command_cancel = false;
             ctx.fsm.cancelNavigation();
             ctx.manual_active = false;
-            motors.stop();
+            if (wheelControl().enabled()) wheelControl().stop(); else motors.stop();
         }
         if (ctx.command_stop) {
             ctx.command_stop = false;
             ctx.fsm.stopNavigation();
             ctx.manual_active = false;
-            motors.stop();
+            if (wheelControl().enabled()) wheelControl().stop(); else motors.stop();
         }
         if (ctx.command_replan) {
             ctx.command_replan = false;
             ctx.fsm.requestReplan();
+        }
+        if (ctx.command_manual_update) {
+            ctx.command_manual_update = false;
+            // Transfer actuator ownership only after autonomous motion stops.
+            // A heartbeat timeout can therefore never resume the old route.
+            ctx.fsm.stopNavigation();
+            ctx.manual_active = true;
+        }
+        if (ctx.command_position_source >= 0) {
+            const int requested = ctx.command_position_source;
+            ctx.command_position_source = -1;
+            ctx.manual_active = false;
+            ctx.fsm.stopNavigation();
+            wheelControl().stop();
+            ctx.latest_position.clear();
+            ctx.fsm.notifyPositionStreamLost();
+            ctx.position_source = static_cast<nav::PositionSourceMode>(requested);
+            if (wheelControl().enabled()) wheelControl().setPositionSource(ctx.position_source);
+            ctx.telemetry->publishEvent("POSITION_SOURCE",
+                requested == 0 ? "encoder odometry selected; explicit start required" :
+                requested == 1 ? "external mock UWB selected; explicit start required" :
+                                 "real UWB selected; explicit start required");
+        }
+        if (ctx.command_encoder_zero) {
+            ctx.command_encoder_zero = false;
+            ctx.manual_active = false;
+            ctx.fsm.stopNavigation();
+            wheelControl().stop();
+            const nav::OdometryPose pose = wheelControl().snapshot().odometry.pose;
+            const bool ok = wheelControl().requestOdometryReset(pose, true);
+            ctx.telemetry->publishEvent("ENCODER_ZERO",
+                ok ? "encoders zeroed; explicit start required" : "encoder zero rejected");
+        }
+        if (ctx.command_set_pose) {
+            ctx.command_set_pose = false;
+            ctx.manual_active = false;
+            ctx.fsm.stopNavigation();
+            wheelControl().stop();
+            nav::OdometryPose pose;
+            pose.x_m = ctx.command_pose_x_m;
+            pose.y_m = ctx.command_pose_y_m;
+            pose.heading_rad = ctx.command_pose_heading_rad;
+            const bool ok = wheelControl().requestOdometryReset(pose, false);
+            ctx.latest_position.clear();
+            ctx.telemetry->publishEvent("ODOMETRY_POSE",
+                ok ? "initial pose applied; explicit start required" : "initial pose rejected");
         }
         if (ctx.command_destination != -1) {
             const int requested = ctx.command_destination;
@@ -333,18 +475,26 @@ void taskNavigation(void*) {
             static_cast<uint32_t>(now_ms - ctx.manual_heartbeat_ms) > MANUAL_COMMAND_TIMEOUT_MS;
         if (manual_timed_out) {
             ctx.manual_active = false;
-            motors.stop();
+            if (wheelControl().enabled()) wheelControl().stop(); else motors.stop();
             ctx.telemetry->publishEvent("WATCHDOG", "manual command heartbeat timed out");
         }
         if (ctx.manual_active && !ctx.fsm.emergencyStopActive()) {
             const nav::Twist manual_twist{ctx.manual_linear_mps, ctx.manual_angular_radps};
             const nav::MotorCommand manual_motor =
                 nav::twistToMotorCommand(manual_twist, motorDriverConfig().drive);
-            motors.setBoth(manual_motor.left, manual_motor.right);
+            if (wheelControl().enabled()) {
+                wheelControl().setNormalizedTarget(manual_motor.left, manual_motor.right);
+            } else {
+                motors.setBoth(manual_motor.left, manual_motor.right);
+            }
         } else if (status.state == nav::NavState::NAVIGATING && !ctx.fsm.emergencyStopActive()) {
-            motors.setBoth(status.motor.left, status.motor.right);
+            if (wheelControl().enabled()) {
+                wheelControl().setNormalizedTarget(status.motor.left, status.motor.right);
+            } else {
+                motors.setBoth(status.motor.left, status.motor.right);
+            }
         } else {
-            motors.stop();
+            if (wheelControl().enabled()) wheelControl().stop(); else motors.stop();
         }
 
         // --- loop timing diagnostics -------------------------------------
@@ -404,13 +554,38 @@ void setup() {
             delay(1000);
         }
     }
+    const bool loaded_persisted_config = configStore().begin(config);
+    if (!nav::validateConfig(config).valid) {
+        NAV_LOG_ERROR("BOOT", "persisted configuration invalid; halting safely");
+        for (;;) delay(1000);
+    }
+    NAV_LOG_INFO("CFG", "%s configuration revision %lu",
+                 loaded_persisted_config ? "loaded persisted" : "using repository default",
+                 static_cast<unsigned long>(configStore().revision()));
+#if NAVIGATION_USE_MOCK_POSITION
+    config.position_source = nav::PositionSourceMode::EXTERNAL_MOCK_UWB;
+#endif
     setMotorDriverConfig(config);
 
     // 3. Safety: stop the motors before anything else can command them.
     initialiseMotorDriver();
     motorDriver().stop();
+    if (config.drive_kind == nav::DriveKind::STEPPER_STEP_DIR &&
+        config.wheel_closed_loop_enabled) {
+        if (!wheelControl().begin(config, stepperDriver())) {
+            NAV_LOG_ERROR("WHEEL", "closed-loop wheel control initialization failed; motors remain stopped");
+            motorDriver().stop();
+            for (;;) {
+                delay(1000);
+            }
+        } else {
+            NAV_LOG_INFO("WHEEL", "dual AS5600 + wheel PID initialized at %.0f Hz",
+                         static_cast<double>(config.control.wheel_rate_hz));
+        }
+    }
 
     FirmwareContext& ctx = context();
+    ctx.position_source = config.position_source;
     ctx.status_mutex = xSemaphoreCreateMutex();
     if (ctx.status_mutex == nullptr) {
         NAV_LOG_ERROR("BOOT", "cannot create status mutex; halting with motors stopped");
@@ -442,6 +617,12 @@ void setup() {
     const BaseType_t navigation_ok = xTaskCreatePinnedToCore(
         taskNavigation, "TaskNavigation", NAVIGATION_TASK_STACK, nullptr,
         NAVIGATION_TASK_PRIORITY, nullptr, NAVIGATION_TASK_CORE);
+    BaseType_t wheel_control_ok = pdPASS;
+    if (wheelControl().enabled()) {
+        wheel_control_ok = xTaskCreatePinnedToCore(
+            taskWheelControl, "TaskWheelControl", WHEEL_CONTROL_TASK_STACK, nullptr,
+            WHEEL_CONTROL_TASK_PRIORITY, nullptr, NAVIGATION_TASK_CORE);
+    }
     const BaseType_t position_ok = xTaskCreatePinnedToCore(
         taskPosition, "TaskPosition", COMMUNICATION_TASK_STACK, nullptr,
         POSITION_TASK_PRIORITY, nullptr, COMMUNICATION_TASK_CORE);
@@ -454,7 +635,8 @@ void setup() {
         TELEMETRY_TASK_PRIORITY, nullptr, COMMUNICATION_TASK_CORE);
 #endif
 
-    if (navigation_ok != pdPASS || position_ok != pdPASS || command_ok != pdPASS
+    if (navigation_ok != pdPASS || wheel_control_ok != pdPASS ||
+        position_ok != pdPASS || command_ok != pdPASS
 #if NAVIGATION_ENABLE_TELEMETRY
         || telemetry_ok != pdPASS
 #endif

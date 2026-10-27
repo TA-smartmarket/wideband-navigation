@@ -5,8 +5,11 @@
 
 #include "navigation/differential_drive.hpp"
 #include "navigation/pid.hpp"
+#include "navigation/odometry.hpp"
 #include "navigation/stepper.hpp"
 #include "navigation/types.hpp"
+#include "navigation/wheel_encoder.hpp"
+#include "navigation/wheel_velocity_controller.hpp"
 
 namespace nav {
 
@@ -88,7 +91,14 @@ struct MotionConfig {
 
 struct ControlConfig {
     float navigation_rate_hz{20.0f};
+    float wheel_rate_hz{100.0f};
     float telemetry_rate_hz{5.0f};
+};
+
+enum class PositionSourceMode {
+    ENCODER_ODOMETRY = 0,
+    EXTERNAL_MOCK_UWB,
+    REAL_UWB,
 };
 
 /// Motor/actuator selection.  The navigation algorithms are identical either
@@ -96,7 +106,7 @@ struct ControlConfig {
 enum class DriveKind {
     /// H-bridge / DC motor: duty-cycle commands in [-1, +1].
     PWM_H_BRIDGE = 0,
-    /// Stepper + step/dir driver (A4988 class): STEP frequency and DIR level.
+    /// Stepper + generic STEP/DIR driver (TB6600 in the trolley firmware).
     STEPPER_STEP_DIR,
 };
 
@@ -121,6 +131,18 @@ struct NavigationConfig {
     /// bench calibration and for the position-control mode.
     bool enable_step_odometry{false};
 
+    /// Runtime pose source. Mock and real UWB share the same input contract;
+    /// encoder odometry is explicitly separate and labelled as an estimate.
+    PositionSourceMode position_source{PositionSourceMode::REAL_UWB};
+
+    WheelEncoderConfig encoder_left{};
+    WheelEncoderConfig encoder_right{};
+    WheelVelocityControlConfig wheel_pid_left{};
+    WheelVelocityControlConfig wheel_pid_right{};
+    bool wheel_closed_loop_enabled{true};
+    OdometryConfig odometry{};
+    OdometryPose initial_pose{};
+
     PIDConfig heading_pid{};
 
     /// Map limits used for validation (meters, smart_market_map frame).
@@ -139,6 +161,15 @@ struct NavigationConfig {
         heading_pid.integral_min = -1.0f;
         heading_pid.integral_max = 1.0f;
         heading_pid.nominal_dt_s = 1.0f / control.navigation_rate_hz;
+
+        wheel_pid_left.pid.kp = 0.35f;
+        wheel_pid_left.pid.ki = 0.08f;
+        wheel_pid_left.pid.kd = 0.01f;
+        wheel_pid_left.pid.derivative_filter_alpha = 0.20f;
+        wheel_pid_left.pid.integral_min = -30.0f;
+        wheel_pid_left.pid.integral_max = 30.0f;
+        wheel_pid_left.pid.nominal_dt_s = 1.0f / control.wheel_rate_hz;
+        wheel_pid_right = wheel_pid_left;
     }
 };
 

@@ -157,7 +157,7 @@ const char* commandHelpText() {
            "  replan          force a replan on the next cycle\n"
            "  debug on|off    enable/disable verbose logging\n"
            "\n"
-           "Stepper bench control (NEMA 17 + A4988):\n"
+           "Stepper bench control (NEMA23 + TB6600 STEP/DIR):\n"
            "  rpm <l> [r]     run the axes at a signed RPM (r defaults to l)\n"
            "  move <l> [r]    turn the axes by a number of revolutions, then stop\n"
            "  zero            declare the current position as step 0\n"

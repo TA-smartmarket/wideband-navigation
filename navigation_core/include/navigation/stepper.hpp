@@ -1,7 +1,8 @@
 // Stepper motor control: step-rate conversion, position tracking and
 // acceleration profiling.
 //
-// Why a dedicated module: a stepper driven by an A4988-class driver is not a
+// Why a dedicated module: a stepper driven by a STEP/DIR driver (TB6600 in the
+// trolley firmware) is not a
 // PWM device.  Speed is the STEP pulse frequency, direction is a logic level, and
 // position is the *count* of pulses.  None of that is expressible as a duty
 // cycle, so the differential-drive command path needs an explicit conversion.
@@ -18,19 +19,17 @@
 namespace nav {
 
 struct StepperConfig {
-    /// Full steps per motor revolution (NEMA 17 is 200, i.e. 1.8 deg/step).
+    /// Full steps per motor revolution (the selected NEMA23 is 200 at 1.8 deg/step).
     int32_t steps_per_revolution{200};
 
-    /// Microstepping divisor set by the A4988 MS1/MS2/MS3 pins:
-    /// 1, 2, 4, 8 or 16.
+    /// Microstepping divisor selected by the external driver DIP switches.
     int32_t microsteps{16};
 
     /// Wheel radius, used to relate motor revolutions to ground distance.
     float wheel_radius_m{0.05f};
 
-    /// Highest STEP frequency the driver/ISR may emit, per axis.  The A4988 needs
-    /// a minimum 1 us pulse, so the electrical limit is ~500 kHz; the practical
-    /// limit is the pulse generator, so this defaults well below it.
+    /// Highest STEP frequency the driver/ISR may emit, per axis. The practical
+    /// limit is the pulse generator and the verified TB6600 timing.
     float max_step_rate_hz{20000.0f};
 
     /// Below this frequency the axis is treated as stopped (avoids emitting

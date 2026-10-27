@@ -3,6 +3,49 @@
 Symptoms are grouped by where they appear. Each entry names the likely cause and
 the concrete check or fix.
 
+Start with the Windows setup and run commands in
+[QUICKSTART_ID.md](QUICKSTART_ID.md). Run commands from the repository root (the
+folder containing `platformio.ini`), not from `simulator/` or `dashboard/`.
+
+### PowerShell refuses to activate `.venv`
+
+Use Command Prompt with `.venv\Scripts\activate.bat`, or skip activation and
+invoke `.\.venv\Scripts\python.exe` directly. Do not change the machine-wide
+execution policy only for this project.
+
+### `pio` is not recognized
+
+Install PlatformIO inside the active virtual environment, then reopen the
+terminal or reactivate the environment:
+
+```powershell
+python -m pip install platformio
+pio --version
+```
+
+### Native test says `gcc` or `g++ is not recognized`
+
+PlatformIO's `native` environment needs both executables on `PATH`. Pointing
+only `CXX` is enough for the simulator build script, but not for PlatformIO:
+
+```powershell
+$compilerBin = "C:\path\to\compiler\bin"
+$env:PATH = "$compilerBin;$env:PATH"
+$env:CXX = "$compilerBin\g++.exe"
+gcc --version
+g++ --version
+pio test -e native
+```
+
+### Dashboard returns 503 or says Three.js assets are missing
+
+Install the browser dependency from the repository root and restart the server:
+
+```powershell
+npm install --prefix dashboard
+python dashboard\main.py
+```
+
 ## 1. Simulator will not start
 
 ### `ModuleNotFoundError: No module named 'pygame'`
@@ -276,11 +319,11 @@ stalled — usually a blocking call added to `TaskNavigation`. The control loop 
 never perform serial I/O, file access or network calls; keep those in the I/O
 tasks. `SYS samples=... overruns=...` in the periodic log reports loop overruns.
 
-## 4b. Stepper motors (NEMA 17 + A4988)
+## 4b. Stepper motors (NEMA23 + TB6600)
 
 ### The motors buzz but do not turn
 
-* `stepper.microsteps` must match the A4988 MS1/MS2/MS3 wiring. A mismatch does
+* `stepper.microsteps` must match the TB6600 DIP setting. A mismatch does
   not stop motion, but every distance and RPM figure will be wrong by the ratio.
 * Check `CMD:stepper`: it reports `steps/rev`, `steps/m`, the position in steps
   and revolutions, the STEP rate and the DIR level. If `rate` stays 0 while
@@ -291,7 +334,7 @@ tasks. `SYS samples=... overruns=...` in the periodic log reports loop overruns.
 ### The motor loses steps / position drifts
 
 Almost always acceleration. Lower `stepper.max_step_accel_hz_per_s` (the torque
-available falls with speed, and a NEMA 17 at 12 V cannot follow a steep ramp), or
+available falls with speed, and a NEMA23 cannot follow an excessive ramp), or
 lower `motion.max_linear_speed_mps`. Confirm with `CMD:move 10` and compare the
 reported revolutions with a mark on the shaft: the pulse count is what the driver
 was *asked* for, not what the motor achieved.
@@ -305,7 +348,8 @@ in `config/navigation.json`. Do **not** negate commands in the navigation core.
 
 They are holding position. Set `kStepperHoldWhenIdle = false` in
 `pin_config.hpp` to disable the drivers while stopped (loses holding torque), or
-lower the A4988 Vref.
+lower the configured TB6600 phase-current setting after consulting the motor
+and driver documentation.
 
 ### Spinning in place registers as travel in the odometry
 

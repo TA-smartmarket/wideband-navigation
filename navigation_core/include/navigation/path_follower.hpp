@@ -97,6 +97,12 @@ public:
     /// required before a correction is trusted: noisy measurements need a longer
     /// baseline to yield a usable direction.
     void updateHeading(const Position2D& position, float position_quality = 1.0f);
+    /// Apply an explicit heading from encoder odometry or a future validated
+    /// pose provider. This bypasses position-difference heading estimation.
+    void setMeasuredHeading(float heading_rad);
+    /// Apply bounded runtime heading gains and reset controller history to
+    /// prevent an integral/derivative jump during live tuning.
+    bool setHeadingPidGains(float kp, float ki, float kd);
 
     /// True when a position-derived heading correction has been applied at least
     /// once since the last reset.  Before that the heading is dead reckoned from

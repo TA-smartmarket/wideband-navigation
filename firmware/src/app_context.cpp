@@ -43,6 +43,7 @@ const char* builtinNavigationJson() {
     return R"JSON({
   "map": { "width_m": 12.0, "height_m": 8.0 },
   "position": {
+    "source": "real_uwb",
     "minimum_quality": 0.60,
     "timeout_ms": 750,
     "heading_min_displacement_m": 0.50,
@@ -95,7 +96,24 @@ const char* builtinNavigationJson() {
     "left_gain": 1.0,
     "right_gain": 1.0
   },
-  "control": { "navigation_rate_hz": 20.0, "telemetry_rate_hz": 5.0 }
+  "encoders": {
+    "common": { "counts_per_revolution": 4096, "sensor_to_wheel_ratio": 1.0,
+      "velocity_filter_alpha": 0.25, "max_abs_sensor_rpm": 600.0,
+      "stale_timeout_ms": 100 },
+    "left": { "invert_direction": false },
+    "right": { "invert_direction": false }
+  },
+  "wheel_velocity_control": {
+    "enabled": true,
+    "common": { "kp": 0.35, "ki": 0.08, "kd": 0.01,
+      "derivative_filter_alpha": 0.20, "integral_limit_rpm": 30.0,
+      "max_abs_rpm": 200.0, "zero_deadband_rpm": 0.25,
+      "tracking_error_rpm": 25.0, "tracking_error_timeout_ms": 500 },
+    "left": {}, "right": {}
+  },
+  "odometry": { "initial_pose": { "x_m": 0.8, "y_m": 0.9, "heading_rad": 0.0 } },
+  "control": { "navigation_rate_hz": 20.0, "wheel_rate_hz": 100.0,
+               "telemetry_rate_hz": 5.0 }
 })JSON";
 }
 

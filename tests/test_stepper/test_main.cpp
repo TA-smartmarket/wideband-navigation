@@ -1,4 +1,4 @@
-// Unit tests: stepper control (NEMA 17 + A4988 class).
+// Unit tests: generic STEP/DIR stepper control (TB6600-compatible model).
 //
 // A step/dir driver is not a PWM device: speed is the STEP frequency, direction
 // is a logic level and position is the pulse count.  These tests pin that
@@ -16,8 +16,8 @@ namespace {
 
 StepperConfig defaultConfig() {
     StepperConfig config;
-    config.steps_per_revolution = 200;  // NEMA 17
-    config.microsteps = 16;             // A4988 at 1/16
+    config.steps_per_revolution = 200;  // selected NEMA23: 1.8 degrees/step
+    config.microsteps = 16;             // driver DIP setting
     config.wheel_radius_m = 0.05f;
     config.max_step_rate_hz = 20000.0f;
     config.min_step_rate_hz = 2.0f;

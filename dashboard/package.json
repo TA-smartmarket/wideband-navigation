@@ -1,0 +1,9 @@
+{
+  "name": "smart-trolley-dashboard-assets",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Locally served browser assets for the Smart Trolley control station",
+  "dependencies": {
+    "three": "0.180.0"
+  }
+}

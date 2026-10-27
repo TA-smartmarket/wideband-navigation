@@ -27,10 +27,12 @@ inline uint64_t monotonicNanos() {
         std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
 }
 
-/// Round a nanosecond duration up to whole microseconds (a non-zero duration
-/// must never be reported as 0 us).
+/// Round a duration up to whole microseconds. A measured operation is reported
+/// as at least 1 us because some Windows steady_clock implementations quantize
+/// two adjacent reads to the same tick even though work occurred between them.
 inline uint32_t nanosToMicrosRoundedUp(uint64_t nanos) {
     const uint64_t micros = (nanos + 999ull) / 1000ull;
+    if (micros == 0) return 1u;
     return micros > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<uint32_t>(micros);
 }
 

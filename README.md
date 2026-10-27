@@ -74,6 +74,11 @@ same code in both environments. See [docs/architecture.md](docs/architecture.md)
 
 ## 3. Directory structure
 
+Lihat juga [indeks dokumentasi](docs/README.md) dan
+[peta struktur repository](docs/PROJECT_STRUCTURE.md) untuk penjelasan singkat
+tentang kepemilikan setiap folder, batas layer, dan file generated yang tidak
+perlu ditampilkan di Explorer.
+
 ```text
 smart-trolley-navigation/
 ├── README.md                     this file
@@ -104,6 +109,7 @@ smart-trolley-navigation/
 | Python | 3.9+ (3.11 tested), `pygame`, `numpy` |
 | C++ toolchain | g++ 9+ / clang++ (host build of the navigation core) |
 | PlatformIO | Core 6.x, `espressif32` platform 6.11.0 |
+| Dashboard assets | Node.js + npm (`three` is installed locally) |
 | ESP32 board | ESP32-S3-DevKitC-1 |
 | Optional | `pyserial` (for the hardware-in-the-loop mock position generator) |
 
@@ -111,19 +117,25 @@ Windows: install [MSYS2](https://www.msys2.org/) for `g++` (the build script als
 finds it automatically at `C:\msys64\ucrt64\bin\g++.exe`), or use the lighter
 self-contained [w64devkit](https://github.com/skeeto/w64devkit/releases) — a
 portable g++ 16 toolchain with no installer, just extract it and point `CXX` at
-`w64devkit\bin\g++.exe`. All commands below are
-Windows-friendly; serial ports are `COM3`, `COM4`, `COM5`, ….
+`w64devkit\bin\g++.exe`. PlatformIO native tests additionally require the
+compiler's `bin` folder on `PATH`; the Indonesian quick-start shows the exact
+PowerShell command. All commands below are Windows-friendly; serial ports are
+`COM3`, `COM4`, `COM5`, ….
 
-## 5. Quick start
+## 5. Quick start (Windows PowerShell)
 
-```bat
-cd smart-trolley-navigation
+For a complete Indonesian setup guide covering the simulator, dashboard,
+tests, ESP32 upload, and mock UWB, see
+[docs/QUICKSTART_ID.md](docs/QUICKSTART_ID.md).
 
+The shortest path to a hardware-free demo is:
+
+```powershell
+# Run this from the repository root (the folder containing platformio.ini).
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 
 python -m pip install -r simulator/requirements.txt
-
 python simulator/main.py
 ```
 
@@ -133,26 +145,42 @@ The simulator window opens on scenario 1.
 Rebuild the shared core explicitly (after changing anything under
 `navigation_core/`) with:
 
-```bat
+```powershell
 python scripts/build_native_core.py --force
 ```
 
 The build is atomic: it compiles to a temporary name and swaps the file in, so a
 Python process still holding the previous library cannot block it.
 
+### Install all development dependencies
+
+```powershell
+python -m pip install -r dashboard\requirements.txt
+python -m pip install platformio
+npm install --prefix dashboard
+```
+
 ### Run the tests
 
-```bat
+```powershell
+python scripts\validate_config.py
+python -m unittest dashboard.test_models
+python simulator\main.py --headless --all
 pio test -e native
 ```
 
 ### Build and flash the firmware
 
-```bat
-pio run
-pio run --target upload
-pio device monitor
+```powershell
+pio run -e esp32-s3-devkitc-1
+pio device list
+pio run -e esp32-s3-devkitc-1 --target upload --upload-port COM5
+pio device monitor --port COM5 --baud 115200
 ```
+
+Replace `COM5` with the port reported by `pio device list`. Firmware upload and
+motor operation require the physical board; the simulator and dashboard
+SIMULATION mode do not.
 
 ## 6. Running the simulator
 
@@ -217,10 +245,12 @@ duplicating the simulator or the navigation core:
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install -r dashboard\requirements.txt
+npm install --prefix dashboard
 python dashboard\main.py
 ```
 
-Open <http://127.0.0.1:8000>.  Start in **SIMULATION** mode for map/graph and
+Open <http://127.0.0.1:8000>. The Three.js dependency is served locally, so the
+running control station never loads a CDN. Start in **SIMULATION** mode for map/graph and
 obstacle editing.  Hardware mode is deliberately opt-in: choose a COM port and
 connect it before commands can be sent.  The dashboard speaks newline-delimited
 JSON protocol version 1 over USB serial and writes received hardware telemetry
@@ -232,11 +262,26 @@ stops manual motion when that heartbeat expires.  Releasing all keys sends a
 zero command.  The dashboard does not invent encoder, PID, odometry, or UWB
 values: fields remain `N/A` until a firmware telemetry packet supplies them.
 
-Drag on empty map space to add an axis-aligned rack.  Select a rack to move,
-resize, rename, or delete it.  The editor rejects out-of-bounds racks and route
-preview excludes graph edges intersecting a rack.  Runtime scene changes are
-stored in `config/dashboard_scene.json`; the supplied `scene.example.json` is
-not overwritten.
+The default view is a Three.js engineering scene with orbit/reset controls,
+route/graph overlays and a telemetry-driven trolley. Click a rack, then use
+**MOVE**, **RESIZE**, or **ROTATE** on the 3D transform gizmo. The **SETUP**
+inspector supports exact X/Y position, dimensions, rotation, attenuation,
+product mapping, add, and delete operations. Rack elevation is derived from its
+height so the rack always rests on the floor. Switch to **FLOOR PLAN** to draw a
+new rack by dragging empty space, drag a rack to move it, or drag its highlighted
+corner handle to resize it.
+
+Room width, depth, and height can also be changed under **SETUP**. The 3D ruler,
+camera framing, and navigation-node grid follow those dimensions automatically;
+**RESET & AUTO-FIT** can apply the same layout without resizing. Whole node rows
+shift together when needed to avoid racks. A resize is rejected only when an
+existing rotated rack cannot fit inside the new room. Route preview excludes
+graph edges intersecting rotated racks. Runtime
+scene changes are stored in `config/dashboard_scene.json`; room width/depth are
+stored in `config/map.json` and the matching graph metadata. The supplied
+`scene.example.json` is not overwritten. Firmware still embeds its development
+graph/navigation configuration at build time, so rebuild and verify firmware
+after intentionally changing the hardware map.
 
 ## 7. Running the scenarios
 
@@ -276,7 +321,10 @@ pio device monitor                   :: serial console at 115200 baud
 pio run --target clean
 ```
 
-Verified build output: RAM 15.3 %, Flash 10.9 % of the default partition table.
+Latest compile-tested output: RAM 16.5 % (54 192 / 327 680 bytes), Flash 13.3 %
+(445 925 / 3 342 336 bytes) of the default partition table. The mock build uses
+445 929 bytes. This is not physical
+hardware verification.
 
 ## 9. Testing with mock UWB data
 
@@ -314,13 +362,12 @@ Configured in [`firmware/include/pin_config.hpp`](firmware/include/pin_config.hp
 
 | Signal | GPIO | Notes |
 |---|---|---|
-| Left motor PWM | 4 | LEDC ch. 0, 20 kHz, 10-bit |
-| Left motor IN1 / IN2 | 5 / 6 | direction |
-| Right motor PWM | 7 | LEDC ch. 1 |
-| Right motor IN1 / IN2 | 15 / 16 | direction |
+| Left TB6600 STEP / DIR / ENABLE | 4 / 5 / 6 | provisional; verify module polarity/logic level |
+| Right TB6600 STEP / DIR / ENABLE | 7 / 15 / 16 | provisional; verify module polarity/logic level |
 | Status LED | 2 | optional |
 | UWB UART RX / TX | 43 / 44 | UART1, reserved for real integration |
-| Encoders (reserved) | 17/18, 8/9 | not used in open-loop mode |
+| Left AS5600 SDA / SCL | 17 / 18 | I2C controller 0, address 0x36 |
+| Right AS5600 SDA / SCL | 8 / 9 | I2C controller 1, address 0x36 |
 
 Pins avoid the ESP32-S3 flash/PSRAM (26–32) and native-USB (19/20) pins.
 
@@ -338,6 +385,7 @@ Key navigation parameters:
 | Parameter | Default | Meaning |
 |---|---|---|
 | `position.minimum_quality` | 0.60 | reject samples below this quality |
+| `position.source` | `real_uwb` | `real_uwb`, `external_mock_uwb`, or `encoder_odometry` |
 | `position.timeout_ms` | 750 | stop the trolley after this without a valid position |
 | `position.heading_min_displacement_m` | 0.50 | baseline before a position-derived heading correction |
 | `path.max_graph_snap_distance_m` | 1.5 | furthest distance to snap a position onto the graph |
@@ -359,6 +407,9 @@ Key navigation parameters:
 | `robot.wheel_base_m` | 0.32 | distance between the driven wheels |
 | `robot.max_wheel_speed_mps` | 0.70 | wheel speed needed for max cruise + max turn |
 | `control.navigation_rate_hz` | 20 | control loop rate |
+| `control.wheel_rate_hz` | 100 | AS5600 and wheel velocity PID rate |
+| `wheel_velocity_control.*` | provisional | bounded left/right feedback gains and fault limits |
+| `encoders.*` | provisional | AS5600 direction, ratio, filtering, and health limits |
 
 Validate every file (including cross-file consistency) with:
 
@@ -410,7 +461,7 @@ simulator and firmware work entirely without a server.
 
 ```bat
 pio test -e native                     :: all C++ suites (unit + integration)
-pio test -e native -f test_dijkstra    :: one suite
+pio test -e native -f test_graph_dijkstra    :: one suite
 python scripts/validate_config.py      :: configuration validation
 python simulator/main.py --headless --all   :: all scenarios
 python scripts/generate_route_fixtures.py --check
@@ -425,6 +476,7 @@ python scripts/generate_reference_results.py --check
 | `test_waypoint_fsm` | waypoint progression, heading estimation, deviation monitor, FSM transitions, JSON contract, telemetry |
 | `test_command_parser` | console command parsing, shared route fixtures |
 | `test_integration` | full pipeline with a plant in the loop: arrival, position loss, E-stop, destination change, unreachable destination, deviation replan |
+| `test_encoder_odometry` | AS5600 wrap/inversion/ratio/health, wheel PID fault response, differential odometry, explicit heading |
 
 ## 15. Known hardware assumptions
 
@@ -437,15 +489,21 @@ python scripts/generate_reference_results.py --check
   Stepper control exposes STEP-rate/RPM conversion, an acceleration
   profile, exact position in steps/revolutions, direction and bench commands
   (`CMD:rpm`, `CMD:move`, `CMD:zero`, `CMD:stepper`).
-* No encoders in the default build: the heading comes from position
-  differences plus commanded yaw-rate dead reckoning. Encoder pins are reserved
-  (`CLOSED_LOOP_ENCODER` mode) and the abstraction is already in place.
+* Two AS5600 encoders, separate I2C buses, wheel RPM PID, and encoder odometry
+  are implemented and compile-tested. Their pins, magnet alignment, direction,
+  filtering, PID gains, and performance still require wheels-raised and floor
+  validation. Firmware stops rather than falling back to open loop on an
+  encoder/control initialization failure.
+* Small runtime configuration is persisted in NVS with schema version, CRC,
+  revision, and last-known-good fallback. Map/graph persistence in LittleFS is
+  not yet implemented.
 * The UWB/EKF subsystem is external and provides `(x, y, quality, valid)`.
 
 ## 16. Documentation
 
 | Document | Contents |
 |---|---|
+| [docs/QUICKSTART_ID.md](docs/QUICKSTART_ID.md) | panduan instalasi dan cara menjalankan proyek di Windows (Bahasa Indonesia) |
 | [docs/architecture.md](docs/architecture.md) | layering, task layout, state machine, data flow |
 | [docs/navigation_algorithm.md](docs/navigation_algorithm.md) | graph model, Dijkstra, follower, PID, equations |
 | [docs/coordinate_system.md](docs/coordinate_system.md) | frame, units, angle conventions |
@@ -455,6 +513,13 @@ python scripts/generate_reference_results.py --check
 | [docs/testing.md](docs/testing.md) | test suites, fixtures, how to add tests |
 | [docs/integration.md](docs/integration.md) | UWB and backend interfaces, what to change at integration |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | common failures and fixes (simulator, tests, firmware, stepper, configuration, scripts) |
+| [docs/MOTOR_SIZING.md](docs/MOTOR_SIZING.md) | torque, speed, step frequency, transmission recommendation |
+| [docs/HARDWARE_WIRING.md](docs/HARDWARE_WIRING.md) | provisional GPIO and safe wiring workflow |
+| [docs/POWER_DISTRIBUTION.md](docs/POWER_DISTRIBUTION.md) | supply, protection, and battery sizing |
+| [docs/HARDWARE_SAFETY.md](docs/HARDWARE_SAFETY.md) | independent E-stop and commissioning limits |
+| [docs/TEST_PLAN.md](docs/TEST_PLAN.md) | staged software and physical experiments |
+| [docs/CONTROL_VALIDATION.md](docs/CONTROL_VALIDATION.md) | PID and odometry measurement method |
+| [docs/IMPLEMENTATION_PROGRESS.md](docs/IMPLEMENTATION_PROGRESS.md) | evidence-based completion checklist |
 
 ## 17. Troubleshooting
 
@@ -479,7 +544,7 @@ Implemented and verified: navigation core, Dijkstra, waypoint tracking, PID,
 differential drive, navigation FSM, replanning, position-loss safety, emergency
 stop, telemetry, console commands, ESP32-S3 firmware, mock and real position
 provider abstraction, desktop simulator, UWB fault simulation, metrics, CSV/JSON
-export, unit tests and integration tests (113 passing), PlatformIO build for both
+export, unit tests and integration tests (121 passing), PlatformIO build for both
 firmware environments, and this documentation set.
 
 Hardware-dependent (structure complete, needs the real device): motor direction
