@@ -7,14 +7,18 @@ an ESP32 attached.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import heapq
 import itertools
+import json
 import math
+import threading
 from typing import Any
 
 
 class ValidationError(ValueError):
     """A configuration or command violates a dashboard safety constraint."""
+
+
+_native_planner_lock = threading.Lock()
 
 
 def finite_positive(value: Any, name: str) -> float:
@@ -64,6 +68,22 @@ def validate_scene(document: dict[str, Any], map_document: dict[str, Any], graph
     room["width"] = finite_positive(map_document["width_m"], "width_m")
     room["depth"] = finite_positive(map_document["height_m"], "height_m")
     room["height"] = finite_positive(room.get("height", 2.7), "room height")
+    trolley = document["scene"].setdefault("trolley", {})
+    trolley["length_m"] = finite_positive(trolley.get("length_m", 0.465), "trolley length")
+    trolley["width_m"] = finite_positive(trolley.get("width_m", 0.26), "trolley width")
+    trolley["height_m"] = finite_positive(trolley.get("height_m", 0.51), "trolley height")
+    trolley["start_mode"] = str(trolley.get("start_mode", "node"))
+    if trolley["start_mode"] not in {"node", "custom"}:
+        raise ValidationError("trolley start_mode must be node or custom")
+    if trolley["start_mode"] == "custom":
+        trolley["start_x_m"] = finite_number(trolley.get("start_x_m"), "trolley start_x_m")
+        trolley["start_y_m"] = finite_number(trolley.get("start_y_m"), "trolley start_y_m")
+        if not 0 <= trolley["start_x_m"] <= map_document["width_m"] or not 0 <= trolley["start_y_m"] <= map_document["height_m"]:
+            raise ValidationError("custom trolley start must remain inside map bounds")
+    if trolley["length_m"] > map_document["width_m"] or trolley["width_m"] > map_document["height_m"]:
+        raise ValidationError("trolley footprint must fit inside map bounds")
+    if trolley["height_m"] > room["height"]:
+        raise ValidationError("trolley height must remain inside room height")
     obstacles = document["scene"].setdefault("obstacles", [])
     identifiers: set[str] = set()
     product_identifiers: set[str] = set()
@@ -319,49 +339,50 @@ class Route:
 
 
 def plan_route(graph: dict[str, Any], scene: dict[str, Any], start: int, destination: int) -> Route:
-    """Dijkstra route on the existing graph, excluding edges blocked by racks.
+    """Plan the dashboard preview with the shared C++ navigation core.
 
-    The firmware and simulator continue to use navigation_core for autonomous
-    following.  This function is the dashboard preview and deliberately follows
-    the same Euclidean weight convention as config/graph.json.
+    The lock is required because the embedded-friendly Dijkstra scratch heap is
+    intentionally static and navigation_core documents the query as
+    non-concurrent.  Keeping this adapter here avoids a second Python Dijkstra
+    implementation drifting away from the simulator and firmware.
     """
     positions = {int(n["id"]): (float(n["x_m"]), float(n["y_m"])) for n in graph.get("nodes", [])}
     if start not in positions or destination not in positions:
         raise ValidationError("start and destination must be graph node ids")
-    blocked = scene.get("scene", {}).get("obstacles", [])
-    adjacency: dict[int, list[tuple[int, float]]] = {node: [] for node in positions}
-    for edge in graph.get("edges", []):
-        source, target = int(edge["from"]), int(edge["to"])
-        if source not in positions or target not in positions:
-            continue
-        if any(segment_hits_obstacle(positions[source], positions[target], obstacle) for obstacle in blocked):
-            continue
-        weight = float(edge.get("weight_m", math.dist(positions[source], positions[target])))
-        adjacency[source].append((target, weight))
-        if edge.get("bidirectional", True):
-            adjacency[target].append((source, weight))
-    queue: list[tuple[float, int]] = [(0.0, start)]
-    distance = {start: 0.0}
-    predecessor: dict[int, int] = {}
-    while queue:
-        current_distance, node = heapq.heappop(queue)
-        if current_distance != distance.get(node):
-            continue
-        if node == destination:
-            break
-        for neighbor, weight in adjacency[node]:
-            candidate = current_distance + weight
-            if candidate < distance.get(neighbor, math.inf):
-                distance[neighbor] = candidate
-                predecessor[neighbor] = node
-                heapq.heappush(queue, (candidate, neighbor))
-    if destination not in distance:
+    try:
+        from simulator.smart_trolley_sim.native_core import NavigationCore
+
+        graph_json = json.dumps(graph, allow_nan=False, separators=(",", ":"))
+        native_scene = json.loads(json.dumps(scene, allow_nan=False))
+        room = native_scene.setdefault("scene", {}).setdefault("room", {})
+        graph_map = graph.get("map", {})
+        room.setdefault("width", float(graph_map.get(
+            "width_m", max(1.0, max(position[0] for position in positions.values())))))
+        room.setdefault("depth", float(graph_map.get(
+            "height_m", max(1.0, max(position[1] for position in positions.values())))))
+        room.setdefault("height", 2.7)
+        scene_json = json.dumps(native_scene, allow_nan=False, separators=(",", ":"))
+        with _native_planner_lock:
+            # The session is needed only to own the already-loaded C ABI.  The
+            # standalone query below receives the exact graph and scene; do not
+            # bind the editable room to NavigationConfig's development map.
+            with NavigationCore(graph_json) as core:
+                nodes, distance = core.plan_route_with_scene(
+                    graph_json, scene_json, 0.0, start, destination)
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise ValidationError(f"shared navigation core unavailable: {exc}") from exc
+    if not nodes:
         raise ValidationError("destination is unreachable with current obstacles")
-    result = [destination]
-    while result[-1] != start:
-        result.append(predecessor[result[-1]])
-    result.reverse()
-    return Route(result, distance[destination])
+    return Route(nodes, distance)
+
+
+def validate_pid_gains(kp: Any, ki: Any, kd: Any) -> tuple[float, float, float]:
+    """Validate the PID tuning contract shared by dashboard and firmware."""
+    values = tuple(finite_number(value, name) for value, name in
+                   ((kp, "kp"), (ki, "ki"), (kd, "kd")))
+    if any(value < 0.0 or value > 10.0 for value in values):
+        raise ValidationError("PID gains must be within [0, 10]")
+    return values
 
 
 def validate_motion(linear_mps: Any, angular_radps: Any, maximum_linear: float, maximum_angular: float) -> tuple[float, float]:

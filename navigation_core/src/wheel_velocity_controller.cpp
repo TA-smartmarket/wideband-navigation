@@ -9,9 +9,19 @@ namespace nav {
 bool WheelVelocityController::configure(const WheelVelocityControlConfig& config) {
     if (!isFinite(config.max_abs_rpm) || config.max_abs_rpm <= 0.0f ||
         !isFinite(config.zero_deadband_rpm) || config.zero_deadband_rpm < 0.0f ||
+        config.zero_deadband_rpm > config.max_abs_rpm ||
         !isFinite(config.tracking_error_rpm) || config.tracking_error_rpm <= 0.0f ||
         config.tracking_error_timeout_ms == 0 ||
-        !isFinite(config.pid.kp) || !isFinite(config.pid.ki) || !isFinite(config.pid.kd)) {
+        !isFinite(config.pid.kp) || !isFinite(config.pid.ki) || !isFinite(config.pid.kd) ||
+        config.pid.kp < 0.0f || config.pid.kp > 10.0f ||
+        config.pid.ki < 0.0f || config.pid.ki > 10.0f ||
+        config.pid.kd < 0.0f || config.pid.kd > 10.0f ||
+        !isFinite(config.pid.derivative_filter_alpha) ||
+        config.pid.derivative_filter_alpha < 0.0f ||
+        config.pid.derivative_filter_alpha > 1.0f ||
+        !isFinite(config.pid.integral_min) || !isFinite(config.pid.integral_max) ||
+        config.pid.integral_min >= config.pid.integral_max ||
+        !isFinite(config.pid.nominal_dt_s) || config.pid.nominal_dt_s <= 0.0f) {
         return false;
     }
     config_ = config;

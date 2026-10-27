@@ -233,11 +233,29 @@ ConfigValidation validateConfig(const NavigationConfig& config) {
         result.fail("heading_pid gains must be finite");
         return result;
     }
+    if (config.heading_pid.kp < 0.0f || config.heading_pid.kp > 10.0f ||
+        config.heading_pid.ki < 0.0f || config.heading_pid.ki > 10.0f ||
+        config.heading_pid.kd < 0.0f || config.heading_pid.kd > 10.0f) {
+        result.fail("heading_pid gains must be within [0, 10]");
+        return result;
+    }
+    if (!isFinite(config.heading_pid.derivative_filter_alpha) ||
+        config.heading_pid.derivative_filter_alpha < 0.0f ||
+        config.heading_pid.derivative_filter_alpha > 1.0f) {
+        result.fail("heading_pid derivative_filter_alpha must be within [0, 1]");
+        return result;
+    }
+    if (!isFinite(config.heading_pid.nominal_dt_s) || config.heading_pid.nominal_dt_s <= 0.0f) {
+        result.fail("heading_pid nominal_dt_s must be > 0");
+        return result;
+    }
     if (config.heading_pid.output_min >= config.heading_pid.output_max) {
         result.fail("heading_pid output_min must be < output_max");
         return result;
     }
-    if (config.heading_pid.integral_min >= config.heading_pid.integral_max) {
+    if (!isFinite(config.heading_pid.integral_min) ||
+        !isFinite(config.heading_pid.integral_max) ||
+        config.heading_pid.integral_min >= config.heading_pid.integral_max) {
         result.fail("heading_pid integral_min must be < integral_max");
         return result;
     }

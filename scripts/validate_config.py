@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -267,11 +268,32 @@ def validate_navigation(document: dict, map_info: dict) -> dict:
              "navigation.json: wheel_velocity_control.enabled must be boolean")
     wheel_common = wheel_control.get("common", {})
     for gain in ("kp", "ki", "kd"):
-        _number(wheel_common, gain, "navigation.json wheel_velocity_control.common")
+        value = _number(wheel_common, gain, "navigation.json wheel_velocity_control.common")
+        _require(0 <= value <= 10,
+                 f"navigation.json: wheel PID {gain} must be within [0, 10]")
+    wheel_filter = _number(wheel_common, "derivative_filter_alpha",
+                           "navigation.json wheel_velocity_control.common")
+    _require(0 <= wheel_filter <= 1,
+             "navigation.json: wheel derivative_filter_alpha must be within [0, 1]")
     _require(_number(wheel_common, "max_abs_rpm", "navigation.json wheel_velocity_control.common") > 0,
              "navigation.json: wheel max_abs_rpm must be > 0")
     _require(_number(wheel_common, "tracking_error_timeout_ms", "navigation.json wheel_velocity_control.common") > 0,
              "navigation.json: wheel tracking_error_timeout_ms must be > 0")
+
+    heading_pid = document.get("heading_pid", {})
+    heading_gains = {
+        "kp": motion.get("heading_kp"),
+        "ki": heading_pid.get("ki"),
+        "kd": heading_pid.get("kd"),
+    }
+    for gain, raw in heading_gains.items():
+        value = float(raw) if isinstance(raw, (int, float)) else math.nan
+        _require(math.isfinite(value) and 0 <= value <= 10,
+                 f"navigation.json: heading PID {gain} must be within [0, 10]")
+    heading_filter = _number(heading_pid, "derivative_filter_alpha",
+                             "navigation.json heading_pid")
+    _require(0 <= heading_filter <= 1,
+             "navigation.json: heading derivative_filter_alpha must be within [0, 1]")
 
     if "map" in document:
         map_block = document["map"]

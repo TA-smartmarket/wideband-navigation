@@ -23,11 +23,13 @@ import uvicorn
 
 try:  # Supports both `python dashboard/main.py` and `python -m dashboard.main`.
     from .models import (ValidationError, build_visibility_edges, fit_nodes_to_room, plan_route,
-                         validate_graph, validate_map, validate_motion, validate_scene)
+                         validate_graph, validate_map, validate_motion, validate_pid_gains,
+                         validate_scene)
     from .serial_bridge import PROTOCOL_VERSION, SerialBridge, available_ports
 except ImportError:  # pragma: no cover - direct-script invocation
     from models import (ValidationError, build_visibility_edges, fit_nodes_to_room, plan_route,
-                        validate_graph, validate_map, validate_motion, validate_scene)
+                        validate_graph, validate_map, validate_motion, validate_pid_gains,
+                        validate_scene)
     from serial_bridge import PROTOCOL_VERSION, SerialBridge, available_ports
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -195,10 +197,8 @@ def control(payload: dict[str, Any]) -> dict[str, Any]:
             motor = str(payload.get("motor"))
             if motor not in {"left", "right", "heading"}:
                 raise ValidationError("PID target must be left, right or heading")
-            values = {name: float(payload[name]) for name in ("kp", "ki", "kd")}
-            if not all(abs(value) < 1_000_000 for value in values.values()):
-                raise ValidationError("PID values must be finite and reasonable")
-            command = {"type": kind, "motor": motor, **values}
+            kp, ki, kd = validate_pid_gains(payload.get("kp"), payload.get("ki"), payload.get("kd"))
+            command = {"type": kind, "motor": motor, "kp": kp, "ki": ki, "kd": kd}
         else:
             raise ValidationError("unsupported control type")
         station.bridge.send(command)

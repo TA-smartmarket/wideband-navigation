@@ -1,6 +1,7 @@
 {
   "scene": {
     "room": { "width": 12, "depth": 8, "height": 2.7 },
+    "trolley": { "length_m": 0.465, "width_m": 0.26, "height_m": 0.51, "start_mode": "node" },
     "anchors": [],
     "obstacles": [
       {

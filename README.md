@@ -164,10 +164,17 @@ npm install --prefix dashboard
 
 ```powershell
 python scripts\validate_config.py
+python scripts\benchmark_navigation.py --iterations 500
 python -m unittest dashboard.test_models
 python simulator\main.py --headless --all
 pio test -e native
 ```
+
+`benchmark_navigation.py` checks every start/destination pair against an
+independent Bellman-Ford oracle, then reports median, p95, p99, worst-case, and
+throughput for the public C ABI. The timing includes graph JSON parsing; the
+firmware's already-loaded graph reports its faster pure-planning time through
+telemetry `plan_time_us`.
 
 ### Build and flash the firmware
 
@@ -263,7 +270,12 @@ zero command.  The dashboard does not invent encoder, PID, odometry, or UWB
 values: fields remain `N/A` until a firmware telemetry packet supplies them.
 
 The default view is a Three.js engineering scene with orbit/reset controls,
-route/graph overlays and a telemetry-driven trolley. Click a rack, then use
+route/graph overlays and a telemetry-driven trolley. The procedural trolley
+model defaults to the 0.465 x 0.260 x 0.510 m reference dimensions and can be
+resized under **SETUP > TROLLEY 3D**. It follows the accepted navigation/odometry
+pose and rolls its four wheels as that pose moves; in hardware mode without a
+valid pose it is shown transparently at the parking node as a visual preview.
+Click a rack, then use
 **MOVE**, **RESIZE**, or **ROTATE** on the 3D transform gizmo. The **SETUP**
 inspector supports exact X/Y position, dimensions, rotation, attenuation,
 product mapping, add, and delete operations. Rack elevation is derived from its
@@ -282,6 +294,14 @@ stored in `config/map.json` and the matching graph metadata. The supplied
 `scene.example.json` is not overwritten. Firmware still embeds its development
 graph/navigation configuration at build time, so rebuild and verify firmware
 after intentionally changing the hardware map.
+
+In dashboard **SIMULATION** mode, `START NODE` defaults to the entry/`masuk`
+node. Press **START SIMULATION** to animate the visual trolley along the current
+Dijkstra preview; the same button stops it while preserving its current visual
+position. **SETUP > TROLLEY 3D** can override the visual start with an X/Y
+coordinate or restore node `masuk`. In **HARDWARE** mode the action changes back
+to **SEND TO TROLLEY**: only the destination is sent, and the 3D trolley follows
+received telemetry rather than the browser animation.
 
 ## 7. Running the scenarios
 

@@ -3,7 +3,7 @@ import unittest
 
 from dashboard.models import (ValidationError, build_visibility_edges, fit_nodes_to_room, plan_route,
                               segment_hits_obstacle, segment_hits_rect, validate_graph,
-                              validate_motion, validate_scene)
+                              validate_motion, validate_pid_gains, validate_scene)
 
 
 class DashboardModelTests(unittest.TestCase):
@@ -20,6 +20,12 @@ class DashboardModelTests(unittest.TestCase):
     def test_motion_limit_is_enforced(self):
         with self.assertRaises(ValidationError):
             validate_motion(1, 0, .45, 2.2)
+
+    def test_pid_gains_match_firmware_contract(self):
+        self.assertEqual(validate_pid_gains("1.6", 0, .05), (1.6, 0.0, .05))
+        for gains in ((-0.1, 0, 0), (0, 10.1, 0), (0, 0, math.nan)):
+            with self.assertRaises(ValidationError):
+                validate_pid_gains(*gains)
 
     def test_product_mapping_must_reference_graph_node(self):
         map_document = {"width_m": 12, "height_m": 8}
@@ -47,6 +53,28 @@ class DashboardModelTests(unittest.TestCase):
         ]}}
         validated = validate_scene(scene, {"width_m": 4, "height_m": 4})
         self.assertEqual(validated["scene"]["obstacles"][0]["z"], .8)
+
+    def test_trolley_dimensions_default_to_reference_size(self):
+        scene = {"scene": {"room": {"height": 2.7}, "obstacles": []}}
+        validated = validate_scene(scene, {"width_m": 4, "height_m": 4})
+        self.assertEqual(validated["scene"]["trolley"], {
+            "length_m": .465, "width_m": .26, "height_m": .51, "start_mode": "node",
+        })
+
+    def test_trolley_dimensions_must_fit_room(self):
+        scene = {"scene": {"room": {"height": 2.7}, "trolley": {
+            "length_m": .465, "width_m": .26, "height_m": 3,
+        }, "obstacles": []}}
+        with self.assertRaises(ValidationError):
+            validate_scene(scene, {"width_m": 4, "height_m": 4})
+
+    def test_custom_trolley_start_must_fit_map(self):
+        scene = {"scene": {"room": {"height": 2.7}, "trolley": {
+            "length_m": .465, "width_m": .26, "height_m": .51,
+            "start_mode": "custom", "start_x_m": 5, "start_y_m": 1,
+        }, "obstacles": []}}
+        with self.assertRaises(ValidationError):
+            validate_scene(scene, {"width_m": 4, "height_m": 4})
 
     def test_graph_node_names_are_unique(self):
         graph = {"nodes": [

@@ -129,6 +129,14 @@ static void test_closed_loop_configuration_is_loaded_and_validated() {
 
     TEST_ASSERT_FALSE(loadNavigationConfig(
         "{\"control\":{\"wheel_rate_hz\":5}}", config, error, sizeof(error)));
+    TEST_ASSERT_FALSE(loadNavigationConfig(
+        "{\"motion\":{\"heading_kp\":-1}}", config, error, sizeof(error)));
+    TEST_ASSERT_FALSE(loadNavigationConfig(
+        "{\"heading_pid\":{\"derivative_filter_alpha\":1.1}}", config,
+        error, sizeof(error)));
+    TEST_ASSERT_FALSE(loadNavigationConfig(
+        "{\"wheel_velocity_control\":{\"common\":{\"ki\":10.1}}}",
+        config, error, sizeof(error)));
 }
 
 int main(int, char**) {

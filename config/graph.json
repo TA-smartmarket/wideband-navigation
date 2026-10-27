@@ -3,91 +3,91 @@
     "map_id": "SMART_MARKET_MAIN",
     "map_version": 1,
     "frame_id": "smart_market_map",
-    "width_m": 15.0,
-    "height_m": 9.0
+    "width_m": 9.0,
+    "height_m": 6.0
   },
   "nodes": [
     {
       "id": 1,
-      "x_m": 1.5,
-      "y_m": 1.5,
+      "x_m": 0.9,
+      "y_m": 1.2000000000000002,
       "type": "entry",
       "name": "masuk"
     },
     {
       "id": 2,
-      "x_m": 5.5,
-      "y_m": 1.5,
+      "x_m": 3.3,
+      "y_m": 1.2000000000000002,
       "type": "aisle",
       "name": "lorong-a1"
     },
     {
       "id": 3,
-      "x_m": 9.5,
-      "y_m": 1.5,
+      "x_m": 5.7,
+      "y_m": 1.2000000000000002,
       "type": "aisle",
       "name": "lorong-a2"
     },
     {
       "id": 4,
-      "x_m": 13.5,
-      "y_m": 1.5,
+      "x_m": 8.1,
+      "y_m": 1.2000000000000002,
       "type": "checkout",
       "name": "kasir"
     },
     {
       "id": 5,
-      "x_m": 1.5,
-      "y_m": 4.5,
+      "x_m": 0.9,
+      "y_m": 3.0,
       "type": "intersection",
       "name": "persimpangan-b1"
     },
     {
       "id": 6,
-      "x_m": 5.5,
-      "y_m": 4.5,
+      "x_m": 3.3,
+      "y_m": 3.0,
       "type": "intersection",
       "name": "persimpangan-b2"
     },
     {
       "id": 7,
-      "x_m": 9.5,
-      "y_m": 4.5,
+      "x_m": 5.7,
+      "y_m": 3.0,
       "type": "intersection",
       "name": "persimpangan-b3"
     },
     {
       "id": 8,
-      "x_m": 13.5,
-      "y_m": 4.5,
+      "x_m": 8.1,
+      "y_m": 3.0,
       "type": "intersection",
       "name": "persimpangan-b4"
     },
     {
       "id": 9,
-      "x_m": 1.5,
-      "y_m": 7.5,
+      "x_m": 0.9,
+      "y_m": 4.8,
       "type": "aisle",
       "name": "lorong-c1"
     },
     {
       "id": 10,
-      "x_m": 5.5,
-      "y_m": 7.5,
+      "x_m": 3.3,
+      "y_m": 4.8,
       "type": "destination",
       "name": "produk-susu"
     },
     {
       "id": 11,
-      "x_m": 9.5,
-      "y_m": 7.5,
+      "x_m": 5.7,
+      "y_m": 4.8,
       "type": "destination",
       "name": "produk-roti"
     },
     {
       "id": 12,
-      "x_m": 13.5,
-      "y_m": 7.5,
+      "x_m": 8.1,
+      "y_m": 4.8,
       "type": "parking",
       "name": "parkir"
     }
@@ -130,27 +130,12 @@
     },
     {
       "from": 5,
-      "to": 6,
-      "bidirectional": true
-    },
-    {
-      "from": 5,
       "to": 9,
       "bidirectional": true
     },
     {
       "from": 6,
-      "to": 7,
-      "bidirectional": true
-    },
-    {
-      "from": 6,
       "to": 10,
-      "bidirectional": true
-    },
-    {
-      "from": 7,
-      "to": 8,
       "bidirectional": true
     },
     {

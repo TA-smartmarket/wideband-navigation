@@ -32,6 +32,7 @@ file, sehingga tautan dan perintah lama tetap bekerja.
 - [Testing](testing.md)
 - [Test plan](TEST_PLAN.md)
 - [Control validation](CONTROL_VALIDATION.md)
+- [Navigation algorithm and PID audit](NAVIGATION_AUDIT.md)
 
 ## Diagram
 
