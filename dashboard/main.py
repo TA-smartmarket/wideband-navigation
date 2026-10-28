@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
+import sys
 import threading
 import time
 from typing import Any
@@ -20,6 +21,14 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+
+ROOT = Path(__file__).resolve().parents[1]
+if __package__ in (None, "") and str(ROOT) not in sys.path:
+    # Direct script execution puts dashboard/ (not the repository root) on
+    # sys.path.  Route previews load the shared C++ binding through the sibling
+    # simulator package, so make the documented `python dashboard/main.py`
+    # launch mode resolve repository packages exactly like `python -m` does.
+    sys.path.insert(0, str(ROOT))
 
 try:  # Supports both `python dashboard/main.py` and `python -m dashboard.main`.
     from .models import (ValidationError, build_visibility_edges, fit_nodes_to_room, plan_route,
@@ -32,7 +41,6 @@ except ImportError:  # pragma: no cover - direct-script invocation
                         validate_scene)
     from serial_bridge import PROTOCOL_VERSION, SerialBridge, available_ports
 
-ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config"
 RUNTIME_SCENE = CONFIG / "dashboard_scene.json"
 LOGS = ROOT / "logs"
