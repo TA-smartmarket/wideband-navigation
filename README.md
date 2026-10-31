@@ -263,6 +263,12 @@ connect it before commands can be sent.  The dashboard speaks newline-delimited
 JSON protocol version 1 over USB serial and writes received hardware telemetry
 to `logs/hardware_YYYYMMDD_HHMMSS.jsonl`.
 
+For a reproducible physical-hardware record that is separate from simulator
+output, use [hardware_logs/README.md](hardware_logs/README.md). Its serial
+recorder preserves raw ESP32 output alongside timestamped JSON packets, and its
+auditor produces a Markdown/JSON diagnosis of UWB/navigation, AS5600/PID, and
+control-loop health for each bench session.
+
 Keyboard teleoperation is W/S (forward/reverse), A/D (turn), Q/E (pivot), and
 Space (latched emergency stop).  A held key sends a 10 Hz heartbeat; firmware
 stops manual motion when that heartbeat expires.  Releasing all keys sends a

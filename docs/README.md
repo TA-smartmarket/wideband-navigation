@@ -25,6 +25,7 @@ file, sehingga tautan dan perintah lama tetap bekerja.
 - [Hardware safety](HARDWARE_SAFETY.md)
 - [Motor sizing](MOTOR_SIZING.md)
 - [Power distribution](POWER_DISTRIBUTION.md)
+- [Hardware log sessions](../hardware_logs/README.md)
 
 ## Simulator dan validasi
 

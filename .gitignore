@@ -24,6 +24,13 @@ results/*
 !logs/.gitkeep
 !results/.gitkeep
 
+# Hardware bench sessions are captured locally from the ESP32 serial port.
+# Keep the tooling and its documentation under version control, never an
+# operator's recorded runs.
+hardware_logs/*
+!hardware_logs/.gitkeep
+!hardware_logs/README.md
+
 # Dashboard map-editor working scene (created from scene.example.json at runtime)
 config/dashboard_scene.json
 
