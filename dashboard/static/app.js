@@ -19,6 +19,7 @@ let telemetryReceivedAt = 0;
 let lastUpdate = performance.now();
 let frames = 0;
 let webgl = null;
+let cameraInitialized = false;
 let renderingPaused = false;
 let transformMode = "translate";
 let roomSignature = "";
@@ -27,6 +28,7 @@ let nodeOptionSignature = "";
 let autoRouteSignature = "";
 let autoRouteTimer = null;
 let autoRouteRevision = 0;
+let missionStarting = false;
 let editorSelectionSignature = "";
 const dirtyEditorFields = new Set();
 const dirtyTrolleyFields = new Set();
@@ -39,6 +41,7 @@ const visualSimulation = {
     running: false,
     lastFrameAt: 0,
     speedMps: 0.65,
+    startRequest: Promise.resolve(),
 };
 const labelWorldPosition = new THREE.Vector3();
 
@@ -106,10 +109,12 @@ function currentPose() {
             simulated: true,
         };
     }
+    if (state?.mode === "hardware" &&
+        (!state.connection?.connected || Number(state.connection.last_rx_age_ms) > 1500)) return null;
     const candidates = [
+        telemetry.odometry_pose?.valid === false ? null : telemetry.odometry_pose,
         telemetry.navigation_pose,
         telemetry.position_valid === false ? null : telemetry.pose,
-        telemetry.odometry_pose?.valid === false ? null : telemetry.odometry_pose,
         telemetry.odometry?.valid === false ? null : telemetry.odometry,
         telemetry.position?.valid === false ? null : telemetry.position,
     ];
@@ -611,14 +616,6 @@ function selectedStartNode() {
 }
 
 function simulationStartPosition() {
-    const configured = trolleyStartConfiguration();
-    if (
-        configured.mode === "custom" &&
-        Number.isFinite(configured.x) &&
-        Number.isFinite(configured.y)
-    ) {
-        return { x: configured.x, y: configured.y, source: "custom" };
-    }
     const node = selectedStartNode();
     return {
         x: Number(node?.x_m ?? state.map.width_m * 0.1),
@@ -930,7 +927,7 @@ function resetCamera() {
     const verticalFov = THREE.MathUtils.degToRad(webgl.camera.fov);
     const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
     const distance =
-        (radius / Math.sin(Math.min(verticalFov, horizontalFov) / 2)) * 1.28;
+        (radius / Math.sin(Math.min(verticalFov, horizontalFov) / 2)) * 0.90;
     const centre = new THREE.Vector3(width / 2, height / 2, depth / 2);
     const direction = new THREE.Vector3(1, 0.95, 1.15).normalize();
     webgl.camera.position.copy(centre).addScaledVector(direction, distance);
@@ -1011,6 +1008,7 @@ function setCameraButton(kind) {
 }
 
 function setTransformMode(mode) {
+    if (state?.mission_active || visualSimulation.running || missionStarting) return;
     const nodeActive = Boolean(selectedNode());
     transformMode = nodeActive ? "translate" : mode;
     document.querySelectorAll("[data-transform]").forEach((button) => {
@@ -1056,7 +1054,7 @@ function attachSelectedObject() {
 }
 
 function selectObjectFrom3d(event) {
-    if (!webgl || !state || webgl.transform.dragging || webgl.transform.axis)
+    if (!webgl || !state || state.mission_active || visualSimulation.running || missionStarting || webgl.transform.dragging || webgl.transform.axis)
         return;
     const rect = webgl.renderer.domElement.getBoundingClientRect();
     webgl.pointer.set(
@@ -1083,6 +1081,7 @@ function selectObjectFrom3d(event) {
 }
 
 function syncSelectionFromTransform() {
+    if (state?.mission_active || visualSimulation.running || missionStarting) return;
     if (!webgl?.transform.object) return;
     const object = webgl.transform.object;
     if (object.userData.nodeId) {
@@ -1360,7 +1359,7 @@ function syncRobot() {
         );
         return;
     }
-    const parkingNode = nodeList().find((node) => node.type === "parking") ?? nodeList()[0];
+    const parkingNode = selectedStartNode();
     applyRobotPose(
         Number(parkingNode?.x_m ?? state.map.width_m * 0.1),
         Number(parkingNode?.y_m ?? state.map.height_m * 0.1),
@@ -1388,6 +1387,11 @@ function startVisualSimulation() {
     visualSimulation.waypoints = points;
     visualSimulation.waypointIndex = 1;
     visualSimulation.running = true;
+    state.mission_active = true;
+    visualSimulation.startRequest = request("/api/simulation/start", { method: "POST" }).catch((error) => {
+        stopVisualSimulation(false);
+        toast("Simulasi gagal", error.message, "error");
+    });
     visualSimulation.lastFrameAt = performance.now();
     webgl.robot.userData.lastPose = null;
     setHardwareAvailability();
@@ -1399,6 +1403,16 @@ function startVisualSimulation() {
 
 function stopVisualSimulation(resetToStart = false) {
     visualSimulation.running = false;
+    visualSimulation.lastFrameAt = 0;
+    if (state?.mode === "simulation") {
+        state.mission_active = false;
+        const stopped = visualSimulation.startRequest.then(() => request("/api/simulation/stop", { method: "POST" })).catch((error) =>
+            toast("Status simulasi gagal", error.message, "error"));
+        visualSimulation.startRequest = Promise.resolve();
+        if (resetToStart) resetVisualSimulationToStart();
+        setHardwareAvailability();
+        return stopped;
+    }
     visualSimulation.lastFrameAt = 0;
     if (resetToStart) resetVisualSimulationToStart();
     setHardwareAvailability();
@@ -1813,7 +1827,7 @@ function refreshSelected() {
     const selection = node || obstacle;
     $("transformbar").classList.toggle(
         "hidden",
-        !selection || !webgl || currentView !== "3d",
+        !selection || !webgl || currentView !== "3d" || state.mission_active || visualSimulation.running || missionStarting,
     );
     if (selection)
         $("transform-selection").textContent = node
@@ -1852,11 +1866,9 @@ function syncTrolleyForm() {
             $(id).value = Number(value).toFixed(3);
         }
     });
-    const configured = trolleyStartConfiguration();
     const node = selectedStartNode();
-    $("trolley-start-status").textContent = configured.mode === "custom"
-        ? `CUSTOM START · ${start.x.toFixed(2)}, ${start.y.toFixed(2)} M`
-        : `NODE START · ${node?.id ?? "—"} ${String(node?.name ?? "masuk").toUpperCase()}`;
+    $("trolley-start-status").textContent =
+        `NODE START MISI · ${node?.id ?? "—"} ${String(node?.name ?? "masuk").toUpperCase()}`;
 }
 
 async function saveTrolleyDimensions() {
@@ -2290,7 +2302,7 @@ async function resizeRoom() {
 }
 
 canvas.addEventListener("pointerdown", (event) => {
-    if (!state) return;
+    if (!state || state.mission_active || visualSimulation.running || missionStarting) return;
     const rect = canvas.getBoundingClientRect();
     const [mx, my] = pxToM(
         ((event.clientX - rect.left) * canvas.width) / rect.width,
@@ -2523,17 +2535,23 @@ function setTelemetry() {
             : simulationArrived
               ? "ARRIVED"
               : "READY"
-        : String(telemetry.mode ?? telemetry.state ?? "IDLE");
+        : String(telemetry.navigation?.state ?? telemetry.state ?? telemetry.mode ?? "IDLE");
     const routeDistance = telemetry.route_distance_m;
-    const quality = telemetry.quality ?? telemetry.uwb_quality;
+    const quality = telemetry.uwb_valid === false ? null : telemetry.uwb_quality ?? telemetry.position_quality ?? telemetry.quality;
     const odometry = telemetry.odometry_pose ?? telemetry.odometry;
-    const uwb = telemetry.uwb_position ?? telemetry.uwb;
-    const navigation = state.mode === "simulation"
-        ? currentPose()
-        : telemetry.navigation_pose ?? telemetry.pose;
+    const uwb = telemetry.uwb_valid === false ? null : telemetry.uwb_position ?? telemetry.uwb;
+    const navigation = currentPose();
     $("odo").textContent = pointText(odometry);
     $("uwb").textContent = pointText(uwb);
     $("nav").textContent = pointText(navigation);
+    $("position-verification").textContent = state.mode === "simulation"
+        ? "Simulasi visual"
+        : $("position-source").value === "real_uwb"
+          ? telemetry.verified === true
+              ? `SESUAI · selisih ${Number(telemetry.disagreement_m ?? 0).toFixed(2)} m`
+              : telemetry.uwb_valid === false ? "UWB tidak valid/terlambat · motor berhenti"
+                : "Encoder dan UWB tidak sesuai · motor berhenti"
+          : telemetry.encoder_healthy === true ? "AS5600 sehat" : "Menunggu AS5600";
     $("metric-state").textContent = navState.replaceAll("_", " ");
     $("metric-source").textContent = telemetry.source ?? state.mode;
     $("metric-pose").textContent = pointText(navigation ?? currentPose());
@@ -2600,14 +2618,21 @@ function setHardwareAvailability() {
     const hardwareMode = state.mode === "hardware";
     const simulationMode = state.mode === "simulation";
     const connected = hardwareMode && state.connection.connected;
-    $("port").disabled = !hardwareMode || connected;
-    $("baud").disabled = !hardwareMode || connected;
-    $("refresh-ports").disabled = !hardwareMode;
-    $("connect").disabled = !hardwareMode || connected || !$("port").value;
+    const serialTransport = $("transport").value === "serial";
+    $("transport").disabled = !hardwareMode || connected;
+    $("port").disabled = !hardwareMode || connected || !serialTransport;
+    $("baud").disabled = !hardwareMode || connected || !serialTransport;
+    $("refresh-ports").disabled = !hardwareMode || !serialTransport;
+    $("connect").disabled = !hardwareMode || connected || (serialTransport && !$("port").value);
     $("disconnect").disabled = !connected;
-    $("send-destination").disabled = simulationMode ? !route : !connected || !route;
+    const selectedSourceMode = ["encoder_odometry", "external_mock_uwb", "real_uwb"].indexOf($("position-source").value);
+    const sourceReady = Number.isInteger(state.telemetry?.source_mode) &&
+        state.telemetry.source_mode === selectedSourceMode;
+    $("send-destination").disabled = simulationMode
+        ? !route && !state.mission_active && !visualSimulation.running
+        : !connected || !route || state.mission_active || missionStarting || !sourceReady;
     $("send-destination").textContent = simulationMode
-        ? visualSimulation.running
+        ? visualSimulation.running || state.mission_active
             ? "STOP SIMULATION"
             : "START SIMULATION"
         : "SEND TO TROLLEY";
@@ -2623,11 +2648,35 @@ function setHardwareAvailability() {
     document.querySelectorAll("[data-drive]").forEach((button) => {
         button.disabled = !connected;
     });
+    const locked = Boolean(state.mission_active || visualSimulation.running || missionStarting);
+    ["route-start", "route-destination", "position-source", "view-editor"].forEach((id) => { $(id).disabled = locked; });
+    $("apply-position-source").disabled = locked || !connected;
+    $("set-pose").disabled = locked || !connected;
+    document.querySelectorAll("#panel-map input, #panel-map select, #panel-map button, [data-add-obstacle], [data-transform]").forEach((element) => {
+        if (locked) {
+            if (element.dataset.missionWasDisabled === undefined)
+                element.dataset.missionWasDisabled = String(element.disabled);
+            element.disabled = true;
+        } else if (element.dataset.missionWasDisabled !== undefined) {
+            element.disabled = element.dataset.missionWasDisabled === "true";
+            delete element.dataset.missionWasDisabled;
+        }
+    });
+    if (webgl) {
+        webgl.transform.enabled = !locked;
+        if (locked) {
+            webgl.transform.detach();
+            $("transformbar").classList.add("hidden");
+        }
+    }
+    canvas.style.pointerEvents = locked ? "none" : "auto";
 }
 
 function render() {
     if (!state) return;
     const connected = Boolean(state.connection.connected);
+    if (state.connection?.transport && $("transport").dataset.userSelected !== "true")
+        $("transport").value = state.connection.transport;
     $("mode").value = state.mode;
     $("status").classList.toggle("connected", connected);
     $("status").innerHTML = connected
@@ -2639,13 +2688,21 @@ function render() {
         ? "<i></i> ONLINE"
         : "<i></i> OFFLINE";
     $("connection-title").textContent = connected
-        ? `Terhubung ke ${state.connection.port}`
+        ? `Terhubung ke ${state.connection.endpoint ?? state.connection.port}`
         : "ESP32 tidak terhubung";
     $("connection").textContent = connected
-        ? `${state.connection.baud_rate} baud · RX ${state.connection.last_rx_age_ms ?? "—"} ms`
+        ? state.connection.transport === "mqtt"
+            ? `Wi-Fi/MQTT · RX ${state.connection.last_rx_age_ms ?? "—"} ms`
+            : `${state.connection.baud_rate} baud · RX ${state.connection.last_rx_age_ms ?? "—"} ms`
         : state.mode === "simulation"
           ? "Mode simulasi aktif"
-          : "Pilih port untuk mulai";
+          : state.connection.transport === "mqtt" && state.connection.broker_connected
+            ? "Broker aktif · menunggu ESP32"
+            : "Pilih koneksi untuk mulai";
+    const urls = state.network?.dashboard_urls ?? [];
+    $("network-hint").textContent = $("transport").value === "mqtt"
+        ? `Broker otomatis · buka dari jaringan: ${urls[0] ?? "alamat LAN laptop port 8000"}`
+        : "Mode USB langsung melalui COM port.";
     $("events").innerHTML = state.events.length
         ? state.events
               .map(
@@ -2685,6 +2742,7 @@ function render() {
     setTelemetry();
     refreshSelected();
     drawEditor();
+    setHardwareAvailability();
     rebuildStatic3d();
     rebuildGraph3d();
     rebuildRoute3d();
@@ -2744,6 +2802,7 @@ function syncNodeOptions() {
 
 function scheduleAutoRoute() {
     if (!state) return;
+    if (state.mission_active || visualSimulation.running || missionStarting) return;
     const start = Number($("route-start").value);
     const destination = Number($("route-destination").value);
     if (!Number.isInteger(start) || !Number.isInteger(destination)) {
@@ -2805,6 +2864,11 @@ async function load() {
     state = await request("/api/state");
     nodeOptionSignature = "";
     render();
+    if (webgl && !cameraInitialized) {
+        resize3d();
+        resetCamera();
+        cameraInitialized = true;
+    }
 }
 
 async function control(type, extra = {}) {
@@ -2859,6 +2923,7 @@ function openTab(name) {
 }
 
 function showView(kind) {
+    if (kind === "editor" && (state?.mission_active || visualSimulation.running || missionStarting)) return;
     const editor = kind === "editor";
     currentView = editor ? "editor" : "3d";
     $("map3d").classList.toggle("hidden", editor);
@@ -2966,13 +3031,18 @@ $("add-node").onclick = addNode;
 $("reset-nodes").onclick = resetNodePositions;
 $("refresh-ports").onclick = ports;
 $("port").onchange = setHardwareAvailability;
+$("transport").onchange = async () => {
+    $("transport").dataset.userSelected = "true";
+    setHardwareAvailability();
+    if ($("transport").value === "serial") await ports();
+};
 $("mode").onchange = async () => {
     try {
-        stopVisualSimulation(false);
+        await stopVisualSimulation(false);
         await request(`/api/mode/${$("mode").value}`, { method: "POST" });
         await load();
         if (state.mode === "simulation") resetVisualSimulationToStart();
-        if (state.mode === "hardware") await ports();
+        if (state.mode === "hardware" && $("transport").value === "serial") await ports();
         toast("Mode diubah", $("mode").value.toUpperCase());
     } catch (error) {
         toast("Mode tidak dapat diubah", error.message, "error");
@@ -2983,11 +3053,13 @@ $("connect").onclick = async () => {
         await request("/api/connect", {
             method: "POST",
             body: JSON.stringify({
+                transport: $("transport").value,
                 port: $("port").value,
                 baud_rate: numeric("baud"),
             }),
         });
-        toast("ESP32 terhubung", $("port").value);
+        delete $("transport").dataset.userSelected;
+        toast("Koneksi dimulai", $("transport").value === "mqtt" ? "Wi-Fi / MQTT" : $("port").value);
         await load();
     } catch (error) {
         toast("Koneksi gagal", error.message, "error");
@@ -3008,16 +3080,17 @@ $("set-pose").onclick = () =>
     });
 $("route-start").onchange = () => {
     autoRouteSignature = "";
-    if (trolleyStartConfiguration().mode === "node") resetVisualSimulationToStart();
+    resetVisualSimulationToStart();
+    syncRobot();
     scheduleAutoRoute();
 };
 $("route-destination").onchange = () => {
     autoRouteSignature = "";
     scheduleAutoRoute();
 };
-$("send-destination").onclick = () => {
+$("send-destination").onclick = async () => {
     if (state.mode === "simulation") {
-        if (visualSimulation.running) {
+        if (visualSimulation.running || state.mission_active) {
             stopVisualSimulation(false);
             toast("Simulasi dihentikan", "Posisi trolley dipertahankan.", "warning");
         } else {
@@ -3025,9 +3098,59 @@ $("send-destination").onclick = () => {
         }
         return;
     }
-    control("navigation.destination", {
+    if (missionStarting || state.mission_active) return;
+    missionStarting = true;
+    setHardwareAvailability();
+    try {
+    const start = selectedStartNode();
+    if (!start || !route?.nodes?.length) return;
+    const source = $("position-source").value;
+    if (!Number.isInteger(state.telemetry?.source_mode) || state.telemetry.source_mode !==
+        ["encoder_odometry", "external_mock_uwb", "real_uwb"].indexOf(source)) {
+        toast("Sumber posisi belum aktif", "Tunggu telemetry source terbaru dari ESP32.", "warning");
+        return;
+    }
+    if (source !== "external_mock_uwb") {
+        const previousReset = Number(state.telemetry?.pose_reset_count ?? 0);
+        const poseSent = await control("odometry.set_pose", {
+            x_m: Number(start.x_m),
+            y_m: Number(start.y_m),
+            heading_rad: numeric("pose-heading"),
+        });
+        if (!poseSent) return;
+        const deadline = performance.now() + 4000;
+        let applied = false;
+        let verified = source !== "real_uwb";
+        while (performance.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            const snapshot = await request("/api/state");
+            const pose = snapshot.telemetry?.odometry_pose;
+            if (Number(snapshot.telemetry?.pose_reset_count) > previousReset &&
+                pose?.valid && Math.hypot(Number(pose.x_m) - Number(start.x_m),
+                    Number(pose.y_m) - Number(start.y_m)) < 0.05) {
+                applied = true;
+                if (source === "real_uwb") verified = snapshot.telemetry?.verified === true;
+                if (verified) break;
+            }
+        }
+        if (!applied) {
+            toast("Start dibatalkan", "Pose awal belum dikonfirmasi oleh AS5600. Periksa encoder dan koneksi.", "error");
+            return;
+        }
+        if (!verified) {
+            toast("Start dibatalkan", "UWB belum cocok dengan pose encoder di node awal.", "error");
+            return;
+        }
+    }
+    await control("navigation.destination", {
         node_id: Number($("route-destination").value),
     });
+    } catch (error) {
+        toast("Misi gagal", error.message, "error");
+    } finally {
+        missionStarting = false;
+        setHardwareAvailability();
+    }
 };
 document
     .querySelectorAll("[data-command]")

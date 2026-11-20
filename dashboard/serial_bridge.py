@@ -49,13 +49,21 @@ class SerialBridge:
         if serial is None:
             raise RuntimeError("pyserial is not installed; install dashboard/requirements.txt")
         self.disconnect()
-        self._port = serial.Serial(port, baudrate=baud_rate, timeout=0.10, write_timeout=0.5)
+        # Manual control sends a heartbeat every 100 ms and firmware expires it
+        # after 350 ms. A 100 ms blocking read plus one-write-per-loop left no
+        # scheduling margin and allowed the TX queue to grow continuously.
+        self._port = serial.Serial(port, baudrate=baud_rate, timeout=0.02, write_timeout=0.5)
+        # A reconnect can begin halfway through a telemetry line that was
+        # already buffered by the USB-UART bridge. Drop that stale fragment so
+        # the NDJSON decoder always starts on a complete new line.
+        self._port.reset_input_buffer()
         self.connected_port, self.baud_rate = port, baud_rate
         self._stop.clear()
         self._thread = threading.Thread(target=self._run, name="esp32-serial", daemon=True)
         self._thread.start()
         self.on_event("SERIAL_CONNECTED", f"{port} @ {baud_rate}")
         self.send({"type": "hello", "protocol_version": PROTOCOL_VERSION})
+        self.send({"type": "config.get"})
 
     def disconnect(self) -> None:
         self._stop.set()
@@ -82,6 +90,8 @@ class SerialBridge:
     def snapshot(self) -> dict[str, Any]:
         return {
             "connected": self.connected,
+            "transport": "serial",
+            "endpoint": self.connected_port,
             "port": self.connected_port,
             "baud_rate": self.baud_rate,
             "last_rx_age_ms": None if self.last_rx_monotonic is None else round((time.monotonic() - self.last_rx_monotonic) * 1000),
@@ -92,12 +102,16 @@ class SerialBridge:
     def _run(self) -> None:
         while not self._stop.is_set() and self._port:
             try:
-                try:
-                    raw = self._outgoing.get_nowait()
+                # Drain a bounded burst before waiting for RX. This keeps the
+                # newest WASD heartbeat close to real time while still yielding
+                # regularly to telemetry reception and disconnect handling.
+                for _ in range(32):
+                    try:
+                        raw = self._outgoing.get_nowait()
+                    except queue.Empty:
+                        break
                     self._port.write(raw)
                     self.tx_lines += 1
-                except queue.Empty:
-                    pass
                 raw_line = self._port.readline()
                 if not raw_line:
                     continue

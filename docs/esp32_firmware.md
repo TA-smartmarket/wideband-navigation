@@ -123,15 +123,16 @@ navigation twist (v, omega)
    -> TB6600 STEP/DIR/ENA
 ```
 
-With the defaults (200 full steps/rev, 1/16 microstepping, r = 0.05 m):
+With the commissioned 5-inch wheels (200 full steps/rev, 1/16 microstepping,
+r = 0.0635 m):
 
 | Quantity | Value |
 |---|---|
 | steps per revolution | 200 × 16 = **3200** |
-| wheel circumference | 0.314159 m |
-| steps per meter | **10 185.9** |
-| STEP rate for 0.45 m/s | 4 583 Hz |
-| motor RPM at 0.45 m/s | **85.9 RPM** |
+| wheel circumference | 0.398982 m |
+| steps per meter | **8 020.4** |
+| STEP rate for 0.60 m/s | **4 812 Hz** |
+| motor RPM at 0.60 m/s | **90.2 RPM** |
 
 ### Acceleration profile
 

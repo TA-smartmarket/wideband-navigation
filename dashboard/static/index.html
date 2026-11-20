@@ -205,6 +205,8 @@
                             >DESTINATION<select id="route-destination"></select
                         ></label>
                     </div>
+                    <small>Letakkan trolley secara manual di START NODE. Atur HEADING di SETUP sesuai arah hadap fisik trolley sebelum mengirim misi.</small>
+                    <small>Untuk mode hardware, peta/node yang diedit di web harus sama dengan graph yang terakhir di-flash ke ESP32.</small>
                     <div class="auto-route">
                         <span>AUTO DIJKSTRA</span
                         ><small
@@ -245,6 +247,10 @@
                                 <th>Navigation</th>
                                 <td id="nav">N/A</td>
                             </tr>
+                            <tr>
+                                <th>Verifikasi posisi</th>
+                                <td id="position-verification">N/A</td>
+                            </tr>
                         </tbody>
                     </table>
 
@@ -257,7 +263,7 @@
                             <option value="external_mock_uwb">
                                 EXTERNAL MOCK UWB
                             </option>
-                            <option value="real_uwb">REAL UWB</option>
+                            <option value="real_uwb">ENCODER + VERIFIKASI UWB</option>
                         </select></label
                     >
                     <button id="apply-position-source" class="full" disabled>
@@ -289,6 +295,11 @@
                             </button>
                         </div>
                         <div class="connection-grid">
+                            <select id="transport" aria-label="Connection transport">
+                                <option value="mqtt">WI-FI / MQTT</option>
+                                <option value="serial">USB / SERIAL</option>
+                            </select
+                            >
                             <select id="port" aria-label="Serial port">
                                 <option value="">
                                     SELECT COM PORT
@@ -300,6 +311,7 @@
                                 aria-label="Baud rate"
                             />
                         </div>
+                        <small id="network-hint">Wi-Fi mode memakai broker yang otomatis dijalankan dashboard.</small>
                         <div class="row btns">
                             <button id="connect" class="primary">CONNECT</button
                             ><button id="disconnect" disabled>
@@ -340,14 +352,14 @@
                     <div class="range-field">
                         <div>
                             <label for="linear">LINEAR SPEED</label
-                            ><output id="linear-value">0.18 m/s</output>
+                            ><output id="linear-value">0.05 m/s</output>
                         </div>
                         <input
                             id="linear"
                             type="range"
                             min="0.02"
-                            max="0.45"
-                            value="0.18"
+                            max="0.60"
+                            value="0.05"
                             step="0.01"
                         />
                     </div>
@@ -705,6 +717,7 @@
                     <p id="trolley-start-status" class="console-line">
                         NODE START · MASUK
                     </p>
+                    <small>START NODE pada Mission planner menentukan posisi awal misi. Koordinat custom hanya untuk pengaturan scene.</small>
                     <div class="input-row two">
                         <label
                             >START X<input
@@ -773,6 +786,6 @@
         <script type="importmap">
             { "imports": { "three": "/vendor/three/three.module.min.js" } }
         </script>
-  <script type="module" src="/static/app.js?v=20261027-9"></script>
+        <script type="module" src="/static/app.js?v=20261119-lan1"></script>
     </body>
 </html>

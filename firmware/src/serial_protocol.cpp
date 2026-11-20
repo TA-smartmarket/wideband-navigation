@@ -112,7 +112,7 @@ bool parseDashboardCommand(const char* line, DashboardCommand& command, char* er
         }
         // Limits match the compiled navigation configuration.  They are an
         // independent serial safety boundary, not merely UI validation.
-        if (std::fabs(linear) > 0.45f || std::fabs(angular) > 2.2f) {
+        if (std::fabs(linear) > 0.60f || std::fabs(angular) > 2.2f) {
             setError(error, error_size, "manual velocity exceeds safety limit");
             return false;
         }

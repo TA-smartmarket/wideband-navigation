@@ -232,9 +232,21 @@ def build_native_core(force: bool = False, verbose: bool = False) -> Path:
     return Path(result.stdout.strip().splitlines()[-1])
 
 
+def native_artifact_is_current() -> bool:
+    """Ask the build helper to verify the library against current C++ sources."""
+    script = REPO_ROOT / "scripts" / "build_native_core.py"
+    result = subprocess.run([sys.executable, str(script), "--verify"],
+                            capture_output=True, text=True, cwd=str(REPO_ROOT))
+    return result.returncode == 0
+
+
 def load_library(auto_build: bool = True, verbose: bool = False) -> ctypes.CDLL:
     """Load the shared navigation core, building it when necessary."""
     last_error: Exception | None = None
+    # Never load an older DLL merely because it happens to exist.  This keeps
+    # simulator/benchmark results tied to the current C++ source tree.
+    if auto_build and not native_artifact_is_current():
+        build_native_core(force=True, verbose=verbose)
     for path in _candidate_library_paths():
         if path.is_file():
             try:
@@ -708,7 +720,7 @@ def core_library_path() -> Path | None:
 
 
 def core_is_built() -> bool:
-    return core_library_path() is not None
+    return core_library_path() is not None and native_artifact_is_current()
 
 
 __all__ = [

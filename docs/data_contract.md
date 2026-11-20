@@ -188,12 +188,28 @@ Operator or host commands, one per line. An optional `CMD:` prefix is accepted.
 | dashboard `encoder.zero` | stop motion and zero AS5600/STEP counters while retaining pose |
 | dashboard `odometry.set_pose` | stop motion and rebase odometry to finite x/y/heading values |
 
+For a hardware mission using AS5600, the dashboard first sends
+`odometry.set_pose` with the selected start node and the operator-entered
+heading. It waits for a newer `pose_reset_count` in wheel telemetry before
+sending `navigation.destination`. Place the trolley physically at that node
+and set heading to its actual orientation; encoder odometry alone cannot
+discover its absolute starting position or heading.
+
+`encoder_odometry` navigates from AS5600 odometry. In `real_uwb` mode the
+firmware still navigates from AS5600 odometry and compares it with a fresh,
+validated UWB fix. A stale/invalid fix, unhealthy encoder, or position gap over
+0.50 m removes motor permission and latches E-stop while navigating. The
+separate `position_verification` telemetry packet reports `verified`,
+`source_mode`, `uwb_valid`, `uwb_position`, `uwb_quality`, `disagreement_m`, and `uwb_age_ms`. Two disagreeing
+sensors cannot establish which one is wrong; an operator must inspect the
+placement/calibration and explicitly reset E-stop before a new start.
+
 ### Wheel-control telemetry
 
 Firmware emits a second NDJSON packet with `type: "wheel_telemetry"`. It carries
 left/right target and measured RPM, error, P/I/D terms, corrected RPM output,
 saturation and tracking-fault flags, raw AS5600 counts, measured revolutions,
-STEP pulse counts, deadline misses, and `odometry_pose`. The latter always has
+STEP pulse counts, deadline misses, `pose_reset_count`, and `odometry_pose`. The latter always has
 `"estimated": true`; STEP counts are not presented as measured wheel travel.
 
 The dashboard merges this packet into its current hardware view but records the
@@ -221,8 +237,8 @@ The equivalent JSON form for a backend is:
   "map_id": "SMART_MARKET_MAIN",
   "map_version": 1,
   "frame_id": "smart_market_map",
-  "width_m": 12.0,
-  "height_m": 8.0,
+  "width_m": 9.0,
+  "height_m": 6.0,
   "origin_x_m": 0.0,
   "origin_y_m": 0.0
 }
@@ -236,7 +252,7 @@ a stale graph cannot be navigated.
 ```json
 {
   "map": { "map_id": "SMART_MARKET_MAIN", "map_version": 1, "frame_id": "smart_market_map",
-           "width_m": 12.0, "height_m": 8.0 },
+           "width_m": 9.0, "height_m": 6.0 },
   "nodes": [
     { "id": 1, "x_m": 1.5, "y_m": 2.0, "type": "entry", "name": "masuk" }
   ],
@@ -272,7 +288,7 @@ Two keys select and shape the actuator:
       "microsteps": 16,
       "max_step_rate_hz": 20000,
       "min_step_rate_hz": 2,
-      "max_step_accel_hz_per_s": 20000
+      "max_step_accel_hz_per_s": 5000
     },
     "left":  { "invert_direction": false },
     "right": { "invert_direction": false },

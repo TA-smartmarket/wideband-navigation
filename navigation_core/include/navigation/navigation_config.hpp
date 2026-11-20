@@ -146,8 +146,10 @@ struct NavigationConfig {
     PIDConfig heading_pid{};
 
     /// Map limits used for validation (meters, smart_market_map frame).
-    float map_width_m{12.0f};
-    float map_height_m{8.0f};
+    // Fallbacks must match the active development map; graph/config metadata
+    // remain authoritative when supplied.
+    float map_width_m{9.0f};
+    float map_height_m{6.0f};
 
     NavigationConfig() {
         // Heading loop defaults tuned for a 0.45 m/s differential drive with a

@@ -1,3 +1,4 @@
+
 #include "as5600_encoder.hpp"
 
 namespace firmware {

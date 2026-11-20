@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
+import socket
 import sys
 import threading
 import time
@@ -35,11 +36,18 @@ try:  # Supports both `python dashboard/main.py` and `python -m dashboard.main`.
                          validate_graph, validate_map, validate_motion, validate_pid_gains,
                          validate_scene)
     from .serial_bridge import PROTOCOL_VERSION, SerialBridge, available_ports
+    from .mqtt_bridge import MqttBridge
 except ImportError:  # pragma: no cover - direct-script invocation
     from models import (ValidationError, build_visibility_edges, fit_nodes_to_room, plan_route,
                         validate_graph, validate_map, validate_motion, validate_pid_gains,
                         validate_scene)
     from serial_bridge import PROTOCOL_VERSION, SerialBridge, available_ports
+    from mqtt_bridge import MqttBridge
+
+try:
+    from amqtt.broker import Broker
+except ImportError:  # pragma: no cover - lifespan reports the missing dependency
+    Broker = None
 
 CONFIG = ROOT / "config"
 RUNTIME_SCENE = CONFIG / "dashboard_scene.json"
@@ -47,6 +55,22 @@ LOGS = ROOT / "logs"
 LOGS.mkdir(exist_ok=True)
 logging.basicConfig(filename=LOGS / "dashboard.log", level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(message)s")
+
+MQTT_BROKER_HOST = "127.0.0.1"
+MQTT_BROKER_PORT = 1883
+
+
+def lan_addresses() -> list[str]:
+    """Return usable local IPv4 addresses without requiring internet access."""
+    addresses: set[str] = set()
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            address = info[4][0]
+            if address and not address.startswith("127.") and not address.startswith("169.254."):
+                addresses.add(address)
+    except OSError:
+        pass
+    return sorted(addresses, key=lambda address: (not address.startswith("192.168."), address))
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -63,6 +87,7 @@ class Station:
     def __init__(self) -> None:
         self.lock = threading.RLock()
         self.mode = "simulation"
+        self.mission_active = False
         self.map = validate_map(read_json(CONFIG / "map.json"))
         self.graph = read_json(CONFIG / "graph.json")
         self.scene = read_json(RUNTIME_SCENE if RUNTIME_SCENE.exists() else CONFIG / "scene.example.json")
@@ -72,8 +97,14 @@ class Station:
         self.device_config: dict[str, Any] | None = None
         self.events: deque[dict[str, Any]] = deque(maxlen=80)
         self._log_run = None
-        self.bridge = SerialBridge(self.receive_packet, self.event)
+        self.serial_bridge = SerialBridge(self.receive_packet, self.event)
+        self.mqtt_bridge = MqttBridge(self.receive_packet, self.event)
+        self.active_transport = "mqtt"
         self.event("DASHBOARD_READY", "simulation mode ready; existing Pygame simulator is unchanged")
+
+    @property
+    def bridge(self):
+        return self.mqtt_bridge if self.active_transport == "mqtt" else self.serial_bridge
 
     def event(self, code: str, message: str) -> None:
         entry = {"timestamp": datetime.now().isoformat(timespec="seconds"), "code": code, "message": message}
@@ -85,9 +116,17 @@ class Station:
         packet_type = packet.get("type")
         if packet_type == "telemetry":
             with self.lock:
-                self.telemetry = packet
+                self.telemetry.update(packet)
+                nav_state = packet.get("navigation", {}).get("state", packet.get("state"))
+                if nav_state in {"ARRIVED", "ERROR", "EMERGENCY_STOP"}:
+                    self.mission_active = False
             self._append_telemetry(packet)
         elif packet_type == "wheel_telemetry":
+            with self.lock:
+                self.telemetry.update(packet)
+                self.telemetry["type"] = "telemetry"
+            self._append_telemetry(packet)
+        elif packet_type == "position_verification":
             with self.lock:
                 self.telemetry.update(packet)
                 self.telemetry["type"] = "telemetry"
@@ -99,7 +138,7 @@ class Station:
         elif packet_type in {"event", "ack", "error"}:
             self.event(str(packet_type).upper(), str(packet.get("message", packet_type)))
         else:
-            self.event("SERIAL_PACKET", f"unrecognised packet type: {packet_type!r}")
+            self.event("DEVICE_PACKET", f"unrecognised packet type: {packet_type!r}")
 
     def _append_telemetry(self, packet: dict[str, Any]) -> None:
         if self._log_run is None:
@@ -109,9 +148,12 @@ class Station:
 
     def snapshot(self) -> dict[str, Any]:
         with self.lock:
-            return {"mode": self.mode, "map": self.map, "graph": self.graph, "scene": self.scene,
+            return {"mode": self.mode, "mission_active": self.mission_active,
+                    "map": self.map, "graph": self.graph, "scene": self.scene,
                     "telemetry": self.telemetry, "events": list(self.events), "connection": self.bridge.snapshot(),
-                    "device_config": self.device_config, "protocol_version": PROTOCOL_VERSION}
+                    "device_config": self.device_config, "protocol_version": PROTOCOL_VERSION,
+                    "network": {"dashboard_urls": [f"http://{address}:8000" for address in lan_addresses()],
+                                "mqtt_port": MQTT_BROKER_PORT}}
 
 
 station = Station()
@@ -119,8 +161,32 @@ station = Station()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    yield
-    station.bridge.disconnect()
+    if Broker is None:
+        raise RuntimeError("amqtt is not installed; run: pip install -r dashboard/requirements.txt")
+    broker = Broker({
+        "listeners": {"default": {"type": "tcp", "bind": f"0.0.0.0:{MQTT_BROKER_PORT}"}},
+        "timeout_disconnect_delay": 0,
+        "plugins": {
+            "amqtt.plugins.authentication.AnonymousAuthPlugin": {"allow_anonymous": True},
+        },
+    })
+    broker_started = False
+    try:
+        try:
+            await broker.start()
+            broker_started = True
+            station.event("MQTT_BROKER_READY", f"0.0.0.0:{MQTT_BROKER_PORT}")
+        except OSError as exc:
+            # If another broker already owns the port, use it instead of making
+            # the whole dashboard unavailable.
+            station.event("MQTT_BROKER_EXTERNAL", str(exc))
+        station.mqtt_bridge.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
+        yield
+    finally:
+        station.serial_bridge.disconnect()
+        station.mqtt_bridge.disconnect()
+        if broker_started:
+            await broker.shutdown()
 
 
 app = FastAPI(title="Smart Trolley Control Station", version="1.0.0", lifespan=lifespan)
@@ -153,19 +219,34 @@ def ports() -> list[dict[str, str]]:
 def set_mode(mode: str) -> dict[str, Any]:
     if mode not in {"simulation", "hardware"}:
         raise HTTPException(422, "mode must be simulation or hardware")
+    require_idle_mission()
     station.mode = mode
+    with station.lock:
+        station.telemetry = {"type": "telemetry", "mode": "IDLE"}
     station.event("MODE_CHANGED", mode.upper())
     return station.snapshot()
 
 
 @app.post("/api/connect")
 def connect(payload: dict[str, Any]) -> dict[str, Any]:
-    port = str(payload.get("port", "")).strip()
-    baud_rate = int(payload.get("baud_rate", 115200))
-    if not port or baud_rate < 9600 or baud_rate > 2_000_000:
-        raise HTTPException(422, "valid serial port and baud rate are required")
+    transport = str(payload.get("transport", "mqtt")).strip().lower()
+    if transport not in {"mqtt", "serial"}:
+        raise HTTPException(422, "transport must be mqtt or serial")
     try:
-        station.bridge.connect(port, baud_rate)
+        if transport == "mqtt":
+            station.serial_bridge.disconnect()
+            station.active_transport = "mqtt"
+            station.mqtt_bridge.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
+        else:
+            port = str(payload.get("port", "")).strip()
+            baud_rate = int(payload.get("baud_rate", 115200))
+            if not port or baud_rate < 9600 or baud_rate > 2_000_000:
+                raise HTTPException(422, "valid serial port and baud rate are required")
+            station.mqtt_bridge.disconnect()
+            station.active_transport = "serial"
+            station.serial_bridge.connect(port, baud_rate)
+        with station.lock:
+            station.telemetry = {"type": "telemetry", "mode": "IDLE"}
     except (RuntimeError, OSError) as exc:
         raise HTTPException(503, str(exc)) from exc
     return station.bridge.snapshot()
@@ -180,9 +261,11 @@ def disconnect() -> dict[str, Any]:
 @app.post("/api/control")
 def control(payload: dict[str, Any]) -> dict[str, Any]:
     kind = str(payload.get("type", ""))
+    if station.mission_active and kind in {"odometry.set_pose", "position.source", "encoder.zero", "config.defaults"}:
+        raise HTTPException(409, "stop navigation before changing the position source or pose")
     try:
         if kind == "motor.manual":
-            linear, angular = validate_motion(payload.get("linear_mps"), payload.get("angular_radps"), 0.45, 2.2)
+            linear, angular = validate_motion(payload.get("linear_mps"), payload.get("angular_radps"), 0.60, 2.2)
             command = {"type": kind, "linear_mps": linear, "angular_radps": angular, "heartbeat": bool(payload.get("heartbeat", False))}
         elif kind in {"estop", "estop.reset", "config.get", "config.save", "config.defaults", "pid.test.stop", "navigation.stop", "encoder.zero"}:
             command = {"type": kind}
@@ -210,14 +293,33 @@ def control(payload: dict[str, Any]) -> dict[str, Any]:
         else:
             raise ValidationError("unsupported control type")
         station.bridge.send(command)
+        if kind == "navigation.destination":
+            station.mission_active = True
+        elif kind in {"navigation.stop", "estop"}:
+            station.mission_active = False
         station.event("COMMAND_SENT", kind)
         return {"ok": True, "command": command}
     except (ValidationError, RuntimeError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
 
+def require_idle_mission() -> None:
+    if station.mission_active:
+        raise HTTPException(409, "stop navigation or wait for arrival before editing the map")
+
+
+@app.post("/api/simulation/{action}")
+def simulation_action(action: str) -> dict[str, Any]:
+    if station.mode != "simulation" or action not in {"start", "stop"}:
+        raise HTTPException(422, "invalid simulation action")
+    with station.lock:
+        station.mission_active = action == "start"
+    return {"mission_active": station.mission_active}
+
+
 @app.post("/api/map")
 def update_map(document: dict[str, Any]) -> dict[str, Any]:
+    require_idle_mission()
     try:
         station.map = validate_map(document)
         validate_scene(station.scene, station.map, station.graph)
@@ -230,6 +332,7 @@ def update_map(document: dict[str, Any]) -> dict[str, Any]:
 
 @app.post("/api/graph")
 def update_graph(document: dict[str, Any]) -> dict[str, Any]:
+    require_idle_mission()
     """Save user-defined nodes and derive a sparse visibility graph."""
     try:
         candidate = copy.deepcopy(document)
@@ -249,6 +352,7 @@ def update_graph(document: dict[str, Any]) -> dict[str, Any]:
 
 @app.post("/api/graph/auto-fit")
 def auto_fit_graph() -> dict[str, Any]:
+    require_idle_mission()
     """Reset all nodes to a tidy room-sized grid and rebuild visibility."""
     try:
         candidate = copy.deepcopy(station.graph)
@@ -267,6 +371,7 @@ def auto_fit_graph() -> dict[str, Any]:
 
 @app.post("/api/room")
 def update_room(payload: dict[str, Any]) -> dict[str, Any]:
+    require_idle_mission()
     """Resize the dashboard room after every dependent object validates."""
     try:
         candidate_map = copy.deepcopy(station.map)
@@ -304,6 +409,7 @@ def update_room(payload: dict[str, Any]) -> dict[str, Any]:
 
 @app.post("/api/scene")
 def update_scene(document: dict[str, Any]) -> dict[str, Any]:
+    require_idle_mission()
     try:
         candidate_scene = validate_scene(copy.deepcopy(document), station.map, station.graph)
         candidate_graph = copy.deepcopy(station.graph)
@@ -342,4 +448,4 @@ async def websocket(websocket: WebSocket) -> None:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

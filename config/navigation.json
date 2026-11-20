@@ -1,7 +1,7 @@
 {
   "map": {
-    "width_m": 12.0,
-    "height_m": 8.0
+    "width_m": 9.0,
+    "height_m": 6.0
   },
   "position": {
     "source": "real_uwb",
@@ -35,7 +35,7 @@
     }
   },
   "motion": {
-    "max_linear_speed_mps": 0.45,
+    "max_linear_speed_mps": 0.60,
     "min_linear_speed_mps": 0.08,
     "max_angular_speed_radps": 2.2,
     "rotate_in_place_threshold_deg": 55.0,
@@ -54,7 +54,7 @@
     "comment": "ki/kd/filters only; the proportional gain is motion.heading_kp (single source of truth)"
   },
   "robot": {
-    "wheel_radius_m": 0.05,
+    "wheel_radius_m": 0.0635,
     "wheel_base_m": 0.32,
     "max_wheel_speed_mps": 0.7,
     "motor_deadband_mps": 0.005,
@@ -105,14 +105,14 @@
       "microsteps": 16,
       "max_step_rate_hz": 20000,
       "min_step_rate_hz": 2,
-      "max_step_accel_hz_per_s": 20000,
-      "comment": "Development placeholders for a STEP/DIR driver. Verify the NEMA23 full-step count, TB6600 DIP microstep setting, wheel geometry and maximum safe step rate before hardware use. max_step_rate_hz must not exceed firmware kStepperTimerBaseHz."
+      "max_step_accel_hz_per_s": 5000,
+      "comment": "Commissioning ramp for the current STEP/DIR bench setup. Verify the NEMA23 full-step count, TB6600 DIP microstep/current settings, wheel geometry and maximum stable step rate before increasing it. max_step_rate_hz must not exceed firmware kStepperTimerBaseHz."
     },
     "left": {
       "invert_direction": false
     },
     "right": {
-      "invert_direction": false
+      "invert_direction": true
     },
     "enable_odometry": true,
     "comment": "Stepper axes. drive_kind selects the actuator. invert_direction flips DIR for mirrored mounting. Set microsteps to the final TB6600 DIP setting; do not assume this development value is suitable for the trolley."

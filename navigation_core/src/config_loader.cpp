@@ -269,17 +269,21 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
     const JsonValue encoders = root.member("encoders");
     if (encoders.isObject()) {
         auto readEncoder = [](const JsonValue& block, WheelEncoderConfig& encoder) {
-            if (!block.isObject()) return;
+            if (!block.isObject())
+                return;
             const JsonValue counts = block.member("counts_per_revolution");
-            if (counts.isNumber()) encoder.counts_per_revolution = counts.asInt(encoder.counts_per_revolution);
+            if (counts.isNumber())
+                encoder.counts_per_revolution = counts.asInt(encoder.counts_per_revolution);
             readFloat(block, "sensor_to_wheel_ratio", encoder.sensor_to_wheel_ratio);
             readFloat(block, "velocity_filter_alpha", encoder.velocity_filter_alpha);
             readFloat(block, "max_abs_sensor_rpm", encoder.max_abs_sensor_rpm);
             const JsonValue stale = block.member("stale_timeout_ms");
-            if (stale.isNumber()) encoder.stale_timeout_ms =
-                static_cast<uint32_t>(stale.asInt(static_cast<int>(encoder.stale_timeout_ms)));
+            if (stale.isNumber())
+                encoder.stale_timeout_ms =
+                    static_cast<uint32_t>(stale.asInt(static_cast<int>(encoder.stale_timeout_ms)));
             const JsonValue invert = block.member("invert_direction");
-            if (invert.isBoolean()) encoder.invert_direction = invert.asBool(encoder.invert_direction);
+            if (invert.isBoolean())
+                encoder.invert_direction = invert.asBool(encoder.invert_direction);
         };
         readEncoder(encoders.member("common"), config.encoder_left);
         readEncoder(encoders.member("common"), config.encoder_right);
@@ -289,10 +293,10 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
 
     const JsonValue wheel_control = root.member("wheel_velocity_control");
     if (wheel_control.isObject()) {
-        config.wheel_closed_loop_enabled =
-            wheel_control.member("enabled").asBool(config.wheel_closed_loop_enabled);
+        config.wheel_closed_loop_enabled = wheel_control.member("enabled").asBool(config.wheel_closed_loop_enabled);
         auto readWheelPid = [](const JsonValue& block, WheelVelocityControlConfig& wheel) {
-            if (!block.isObject()) return;
+            if (!block.isObject())
+                return;
             readFloat(block, "kp", wheel.pid.kp);
             readFloat(block, "ki", wheel.pid.ki);
             readFloat(block, "kd", wheel.pid.kd);
@@ -305,8 +309,9 @@ bool loadNavigationConfig(const char* text, NavigationConfig& out, char* error, 
             readFloat(block, "zero_deadband_rpm", wheel.zero_deadband_rpm);
             readFloat(block, "tracking_error_rpm", wheel.tracking_error_rpm);
             const JsonValue timeout = block.member("tracking_error_timeout_ms");
-            if (timeout.isNumber()) wheel.tracking_error_timeout_ms =
-                static_cast<uint32_t>(timeout.asInt(static_cast<int>(wheel.tracking_error_timeout_ms)));
+            if (timeout.isNumber())
+                wheel.tracking_error_timeout_ms =
+                    static_cast<uint32_t>(timeout.asInt(static_cast<int>(wheel.tracking_error_timeout_ms)));
         };
         readWheelPid(wheel_control.member("common"), config.wheel_pid_left);
         readWheelPid(wheel_control.member("common"), config.wheel_pid_right);

@@ -19,6 +19,7 @@ struct WheelControlSnapshot {
     uint64_t left_step_count{0};
     uint64_t right_step_count{0};
     uint32_t update_count{0};
+    uint32_t pose_reset_count{0};
     uint32_t deadline_misses{0};
     bool encoder_healthy{false};
 };

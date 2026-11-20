@@ -47,7 +47,7 @@ python scripts/run_simulator.py --all --headless --json results/sweep.json
 
 ```text
 +----------------------------------------------------+------------------+
-|  SMART_MARKET_MAIN v1  12.0 x 8.0 m                |  NAVIGATION      |
+|  SMART_MARKET_MAIN v1  9.0 x 6.0 m                 |  NAVIGATION      |
 |                                                    |  POSE            |
 |   store floor plan (walls, shelves, checkout,      |  CONTROL         |
 |     entrance, parking), grid, graph edges          |  UWB / FAULTS    |
@@ -103,7 +103,7 @@ python simulator/main.py --start-at 9.5 5.8 --destination 1  :: custom start AND
 ```
 
 A destination may be a numeric node id or a node `name` from `config/graph.json`
-(`masuk`, `lorong-a1`, `kasir`, `persimpangan-b1`...`b4`, `lorong-c1`,
+(`masuk`, `snack-keripik`, `snack-biskuit`, `kasir`, `persimpangan-b1`...`b4`, `makanan-instan`,
 `produk-susu`, `produk-roti`, `parkir`), matched case-insensitively. An
 unrecognised name is an error that lists the known names, rather than a silent
 fallback to the scenario default.

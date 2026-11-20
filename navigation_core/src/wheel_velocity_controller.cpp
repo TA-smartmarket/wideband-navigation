@@ -7,20 +7,15 @@
 namespace nav {
 
 bool WheelVelocityController::configure(const WheelVelocityControlConfig& config) {
-    if (!isFinite(config.max_abs_rpm) || config.max_abs_rpm <= 0.0f ||
-        !isFinite(config.zero_deadband_rpm) || config.zero_deadband_rpm < 0.0f ||
-        config.zero_deadband_rpm > config.max_abs_rpm ||
+    if (!isFinite(config.max_abs_rpm) || config.max_abs_rpm <= 0.0f || !isFinite(config.zero_deadband_rpm) ||
+        config.zero_deadband_rpm < 0.0f || config.zero_deadband_rpm > config.max_abs_rpm ||
         !isFinite(config.tracking_error_rpm) || config.tracking_error_rpm <= 0.0f ||
-        config.tracking_error_timeout_ms == 0 ||
-        !isFinite(config.pid.kp) || !isFinite(config.pid.ki) || !isFinite(config.pid.kd) ||
-        config.pid.kp < 0.0f || config.pid.kp > 10.0f ||
-        config.pid.ki < 0.0f || config.pid.ki > 10.0f ||
-        config.pid.kd < 0.0f || config.pid.kd > 10.0f ||
-        !isFinite(config.pid.derivative_filter_alpha) ||
-        config.pid.derivative_filter_alpha < 0.0f ||
-        config.pid.derivative_filter_alpha > 1.0f ||
-        !isFinite(config.pid.integral_min) || !isFinite(config.pid.integral_max) ||
-        config.pid.integral_min >= config.pid.integral_max ||
+        config.tracking_error_timeout_ms == 0 || !isFinite(config.pid.kp) || !isFinite(config.pid.ki) ||
+        !isFinite(config.pid.kd) || config.pid.kp < 0.0f || config.pid.kp > 10.0f || config.pid.ki < 0.0f ||
+        config.pid.ki > 10.0f || config.pid.kd < 0.0f || config.pid.kd > 10.0f ||
+        !isFinite(config.pid.derivative_filter_alpha) || config.pid.derivative_filter_alpha < 0.0f ||
+        config.pid.derivative_filter_alpha > 1.0f || !isFinite(config.pid.integral_min) ||
+        !isFinite(config.pid.integral_max) || config.pid.integral_min >= config.pid.integral_max ||
         !isFinite(config.pid.nominal_dt_s) || config.pid.nominal_dt_s <= 0.0f) {
         return false;
     }
@@ -40,17 +35,14 @@ void WheelVelocityController::reset() {
     excessive_error_since_ms_ = 0;
 }
 
-float WheelVelocityController::update(float target_rpm, float measured_rpm,
-                                      float dt_s, uint64_t now_ms,
+float WheelVelocityController::update(float target_rpm, float measured_rpm, float dt_s, uint64_t now_ms,
                                       bool feedback_healthy) {
     if (!feedback_healthy || !isFinite(measured_rpm)) {
         reset();
         status_.tracking_fault = true;
         return 0.0f;
     }
-    target_rpm = isFinite(target_rpm)
-                     ? clampf(target_rpm, -config_.max_abs_rpm, config_.max_abs_rpm)
-                     : 0.0f;
+    target_rpm = isFinite(target_rpm) ? clampf(target_rpm, -config_.max_abs_rpm, config_.max_abs_rpm) : 0.0f;
     if (std::fabs(target_rpm) <= config_.zero_deadband_rpm) {
         reset();
         status_.measured_rpm = measured_rpm;
@@ -71,9 +63,10 @@ float WheelVelocityController::update(float target_rpm, float measured_rpm,
     status_.saturated = output != unsaturated;
 
     if (std::fabs(status_.error_rpm) > config_.tracking_error_rpm) {
-        if (excessive_error_since_ms_ == 0) excessive_error_since_ms_ = now_ms;
+        if (excessive_error_since_ms_ == 0)
+            excessive_error_since_ms_ = now_ms;
         status_.tracking_fault = now_ms >= excessive_error_since_ms_ &&
-            now_ms - excessive_error_since_ms_ >= config_.tracking_error_timeout_ms;
+                                 now_ms - excessive_error_since_ms_ >= config_.tracking_error_timeout_ms;
     } else {
         excessive_error_since_ms_ = 0;
         status_.tracking_fault = false;

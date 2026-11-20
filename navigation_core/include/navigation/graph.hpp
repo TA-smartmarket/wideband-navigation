@@ -16,6 +16,7 @@ enum class NodeType {
     ENTRY,
     EXIT,
     CHECKOUT,
+    WAYPOINT,
     UNKNOWN,
 };
 

@@ -2,10 +2,11 @@
 
 **Design and Development of an Autonomous Smart Trolley Navigation System Based on UWB Using the Dijkstra Algorithm for Path Planning**
 
-An indoor smart-market trolley that receives its position from an external
-UWB/EKF positioning subsystem, plans the shortest route through a graph of the
-store using **Dijkstra**, converts that route into waypoints and follows it with
-a **differential-drive PID controller** on an **ESP32-S3**.
+An indoor smart-market trolley that plans the shortest route through a graph
+using **Dijkstra** and follows it with a **differential-drive PID controller**
+on an **ESP32-S3**. Hardware missions can use AS5600 encoder odometry for
+position; the real-UWB mode checks that odometry against an external UWB/EKF
+position fix before allowing autonomous motion.
 
 This repository contains the navigation subsystem only: positioning (UWB/EKF),
 the market backend and the customer application are external modules with
@@ -275,6 +276,17 @@ stops manual motion when that heartbeat expires.  Releasing all keys sends a
 zero command.  The dashboard does not invent encoder, PID, odometry, or UWB
 values: fields remain `N/A` until a firmware telemetry packet supplies them.
 
+### Wi-Fi/LAN dashboard control
+
+Double-click `START_DASHBOARD_LAN.bat`. It checks the Python/Three.js
+dependencies, requests a one-time LocalSubnet firewall rule when needed, starts
+the FastAPI dashboard on port 8000, and embeds an MQTT broker on port 1883.
+Open `http://<laptop-LAN-IP>:8000` from any device on the same network. The
+firmware accepts the versioned dashboard protocol over MQTT, while the 350 ms
+manual heartbeat and latched E-stop remain enforced on the ESP32. USB remains
+available as a fallback transport and for flashing. Node-RED is optional; see
+[MQTT / Node-RED setup](docs/mqtt_nodered.md).
+
 The default view is a Three.js engineering scene with orbit/reset controls,
 route/graph overlays and a telemetry-driven trolley. The procedural trolley
 model defaults to the 0.465 x 0.260 x 0.510 m reference dimensions and can be
@@ -422,7 +434,7 @@ Key navigation parameters:
 | `path.replan_cross_track_error_m` | 0.60 | deviation that triggers a replan |
 | `path.route_deviation_confirm_ms` | 500 | confirmation window before replanning |
 | `path.replan_cooldown_ms` | 1000 | minimum interval between replans |
-| `motion.max_linear_speed_mps` | 0.45 | cruise speed |
+| `motion.max_linear_speed_mps` | 0.60 | cruise speed for the commissioned 5-inch wheels |
 | `motion.rotate_in_place_threshold_deg` | 55 | heading error that switches to spin-in-place |
 | `motion.max_angular_speed_radps` | 2.2 | yaw-rate ceiling; the dominant corner-tracking limit |
 | `motion.heading_deadband_deg` | 5.0 | taper the angular command inside this error (straight-line stability) |
@@ -431,11 +443,24 @@ Key navigation parameters:
 | `drive_kind` | `stepper` | `stepper` (TB6600 STEP/DIR) or `pwm_h_bridge` |
 | `stepper.microsteps` | 16 (placeholder) | must match the final TB6600 DIP setting |
 | `robot.wheel_base_m` | 0.32 | distance between the driven wheels |
+| `robot.wheel_radius_m` | 0.0635 | 5-inch wheel diameter (0.127 m) |
 | `robot.max_wheel_speed_mps` | 0.70 | wheel speed needed for max cruise + max turn |
 | `control.navigation_rate_hz` | 20 | control loop rate |
 | `control.wheel_rate_hz` | 100 | AS5600 and wheel velocity PID rate |
 | `wheel_velocity_control.*` | provisional | bounded left/right feedback gains and fault limits |
 | `encoders.*` | provisional | AS5600 direction, ratio, filtering, and health limits |
+
+For a dashboard hardware mission, put the trolley at the selected **START
+NODE**, enter its actual physical heading in Setup, and send the mission. The
+dashboard first rebases odometry to that node and waits for encoder telemetry
+to confirm the reset. In `encoder_odometry` mode the 3D trolley follows the
+measured odometry pose. In `real_uwb` mode the same pose drives navigation, but
+a fresh UWB fix must agree within 0.50 m; disagreement or sensor loss latches
+E-stop. The UWB fix cannot identify which of two disagreeing sensors is wrong.
+See [docs/data_contract.md](docs/data_contract.md) for telemetry and recovery.
+The firmware graph is embedded at build time; after changing graph coordinates
+or edges in the dashboard, rebuild and flash firmware before using a hardware
+mission so its route matches the web preview.
 
 Validate every file (including cross-file consistency) with:
 

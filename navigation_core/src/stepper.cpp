@@ -188,6 +188,20 @@ float StepperAxis::stoppingRateLimit() const {
 
 void StepperAxis::rampTowards(float desired, float dt_s) {
     const float max_delta = config_.max_step_accel_hz_per_s * dt_s;
+    // A STEP/DIR motor must decelerate to rest before DIR changes.  Treating
+    // the signed rate as one ordinary scalar can cross straight from +rate to
+    // -rate in a single control period.  The pulse generator would then flip
+    // DIR while the rotor is still moving, which commonly stalls the motor and
+    // produces only a buzz.  Pin the reversal cycle at zero; the next advance
+    // may accelerate in the opposite direction.
+    if ((current_rate_hz_ > 0.0f && desired < 0.0f) ||
+        (current_rate_hz_ < 0.0f && desired > 0.0f)) {
+        const float deceleration = std::fabs(current_rate_hz_) < max_delta
+                                       ? std::fabs(current_rate_hz_)
+                                       : max_delta;
+        current_rate_hz_ += current_rate_hz_ > 0.0f ? -deceleration : deceleration;
+        return;
+    }
     const float delta = desired - current_rate_hz_;
     if (delta > max_delta) {
         current_rate_hz_ += max_delta;

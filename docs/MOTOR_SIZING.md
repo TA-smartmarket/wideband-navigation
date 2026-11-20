@@ -5,7 +5,7 @@
 This calculation is a design bound, not a substitute for a motor torque-speed
 curve or a loaded trolley test. The current prototype inputs are:
 
-- total mass: 15, 20, and 30 kg;
+- total operational mass: 8 kg and 10 kg (the specified normal range);
 - drive-wheel diameter: 0.100 m (provisional);
 - target speed: 0.50 m/s;
 - acceleration target: 0.30 m/s²;
@@ -52,9 +52,8 @@ Twheel_each = F r / (2 efficiency)
 
 | Mass | Flat force | Flat torque/wheel | 3° force | 3° torque/wheel | Motor torque with 2:1 reduction |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 15 kg | 13.91 N | 0.41 N·m | 21.62 N | 0.64 N·m | 0.35 N·m |
-| 20 kg | 16.89 N | 0.50 N·m | 27.15 N | 0.80 N·m | 0.44 N·m |
-| 30 kg | 22.83 N | 0.67 N·m | 38.23 N | 1.12 N·m | 0.62 N·m |
+| 8 kg | 9.75 N | 0.29 N·m | 13.86 N | 0.41 N·m | 0.23 N·m |
+| 10 kg | 10.94 N | 0.32 N·m | 16.07 N | 0.47 N·m | 0.26 N·m |
 
 The final column includes the assumed 90% belt efficiency. These values do not
 include curb impacts, a jammed caster, or dynamic shock. The HUIYINN motor's
@@ -77,7 +76,7 @@ microsteps configurable until the actual assembly is measured.
 2. Record current and encoder RPM at 25, 50, 100, 150, and 200 motor RPM.
 3. Apply a measured axle load or use a torque arm; repeat at the intended
    supply voltage and TB6600 current setting.
-4. Repeat with 15, 20, and 30 kg on the trolley at low speed, then increase the
+4. Repeat with 8 kg and 10 kg on the trolley at low speed, then increase the
    acceleration limit only after no stalls or missed-step faults occur.
 5. Record driver/motor temperatures for at least 30 minutes. The final speed
    and load envelope is the measured stable envelope, not the calculation.

@@ -7,6 +7,13 @@
 
 #include <cstdint>
 
+// Optional per-machine credentials and broker address.  This file is ignored
+// by Git; copy local_secrets.example.hpp to local_secrets.hpp before a local
+// MQTT build.
+#if __has_include("local_secrets.hpp")
+#include "local_secrets.hpp"
+#endif
+
 // ---------------------------------------------------------------------------
 // Feature flags
 // ---------------------------------------------------------------------------
@@ -58,10 +65,73 @@
 #define NAVIGATION_MQTT_TOPIC "uwb/home/navigation/position"
 #endif
 
+/// Publish existing NDJSON telemetry to a local MQTT broker.
+#ifndef NAVIGATION_ENABLE_MQTT_TELEMETRY
+#define NAVIGATION_ENABLE_MQTT_TELEMETRY 0
+#endif
+
+/// Accept a small, safety-bounded subset of dashboard commands from the
+/// trolley's MQTT command topic. Keep this disabled unless the broker is on
+/// an isolated, trusted LAN (or protected with credentials and ACLs).
+#ifndef NAVIGATION_ENABLE_MQTT_CONTROL
+#define NAVIGATION_ENABLE_MQTT_CONTROL 0
+#endif
+
+/// Runs the MQTT client's network state machine. This is separate from
+/// telemetry formatting so a bench build can diagnose Wi-Fi independently.
+#ifndef NAVIGATION_ENABLE_MQTT_SERVICE
+#define NAVIGATION_ENABLE_MQTT_SERVICE 1
+#endif
+
+/// Set to 0 only for an explicitly monitor-only bench build. It keeps TB6600
+/// outputs inhibited while serial/MQTT telemetry can be inspected.
+#ifndef NAVIGATION_ENABLE_STEPPER_TIMER
+#define NAVIGATION_ENABLE_STEPPER_TIMER 1
+#endif
+
+/// Keep enabled for deployed motion firmware. It may be disabled temporarily
+/// while isolating a board-level boot/reset fault.
+#ifndef NAVIGATION_ENABLE_TASK_WATCHDOG
+#define NAVIGATION_ENABLE_TASK_WATCHDOG 1
+#endif
+
+/// Enables the AS5600 acquisition and wheel-velocity PID task when the
+/// navigation configuration requests it. Disable only for an explicit
+/// open-loop bench profile where encoder hardware is not present.
+#ifndef NAVIGATION_ENABLE_WHEEL_CLOSED_LOOP
+#define NAVIGATION_ENABLE_WHEEL_CLOSED_LOOP 1
+#endif
+
+/// Maximum accepted gap between encoder odometry and a fresh UWB fix.
+/// Calibrate against measured UWB noise and wheel slip on the actual trolley.
+#ifndef NAVIGATION_MAX_UWB_ODOMETRY_GAP_M
+#define NAVIGATION_MAX_UWB_ODOMETRY_GAP_M 0.50f
+#endif
+
+/// Allows a diagnostic build to isolate NVS/Preferences from network startup.
+#ifndef NAVIGATION_ENABLE_PERSISTED_CONFIG
+#define NAVIGATION_ENABLE_PERSISTED_CONFIG 1
+#endif
+
+#ifndef NAVIGATION_MQTT_TELEMETRY_BASE_TOPIC
+#define NAVIGATION_MQTT_TELEMETRY_BASE_TOPIC "smart_trolley"
+#endif
+
+/// Optional broker credentials. Leave both empty only on an isolated trusted
+/// development LAN.
+#ifndef NAVIGATION_MQTT_USERNAME
+#define NAVIGATION_MQTT_USERNAME ""
+#endif
+#ifndef NAVIGATION_MQTT_PASSWORD
+#define NAVIGATION_MQTT_PASSWORD ""
+#endif
+
 /// Motor output mode.
 ///   0 = NullMotorDriver: no hardware, state machine still fully exercised
 ///   1 = H-bridge driver on LEDC PWM
+#ifndef NAVIGATION_ENABLE_MOTOR_OUTPUT
 #define NAVIGATION_ENABLE_MOTOR_OUTPUT 1
+#endif
 
 /// Publish a telemetry line every NAVIGATION_TELEMETRY_PERIOD_MS.
 #ifndef NAVIGATION_ENABLE_TELEMETRY
@@ -95,13 +165,22 @@ constexpr int COMMUNICATION_TASK_CORE = 0;
 constexpr uint32_t NAVIGATION_TASK_STACK = 8192;
 constexpr uint32_t WHEEL_CONTROL_TASK_STACK = 6144;
 constexpr uint32_t COMMUNICATION_TASK_STACK = 4096;
+// JSON parsing plus configuration replies exceeded the generic communication
+// stack on the physical ESP32-S3 (TaskCommands stack-canary reset). Keep the
+// command parser on its own measured budget instead of sharing the lightweight
+// position-task allocation.
+constexpr uint32_t COMMAND_TASK_STACK = 8192;
 constexpr uint32_t TELEMETRY_TASK_STACK = 6144;
+/// MQTT packet assembly deliberately lives outside the command parser task;
+/// its bounded receive/publish buffers require a larger I/O stack.
+constexpr uint32_t MQTT_TASK_STACK = 8192;
 
 constexpr UBaseType_t NAVIGATION_TASK_PRIORITY = 5;   // highest: control loop
 constexpr UBaseType_t WHEEL_CONTROL_TASK_PRIORITY = 6;
 constexpr UBaseType_t POSITION_TASK_PRIORITY = 4;
 constexpr UBaseType_t TELEMETRY_TASK_PRIORITY = 2;
 constexpr UBaseType_t COMMAND_TASK_PRIORITY = 3;
+constexpr UBaseType_t MQTT_TASK_PRIORITY = 1;
 
 /// Safety watchdog: if the navigation loop stalls for longer than this, the
 /// watchdog fires and the device reboots rather than driving blind.

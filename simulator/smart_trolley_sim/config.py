@@ -70,7 +70,7 @@ class PhysicsConfig:
     """Plant parameters.  These describe the *physical* trolley, not the
     controller: the controller lives in the C++ navigation core."""
 
-    wheel_radius_m: float = 0.05
+    wheel_radius_m: float = 0.0635
     wheel_base_m: float = 0.32
     max_wheel_speed_mps: float = 0.60
     motor_time_constant_s: float = 0.12

@@ -93,6 +93,13 @@ The **ground-truth** pose exists only inside the simulator and is never passed t
 navigation: the simulator feeds the core the *measured* position, exactly as the
 firmware does.
 
+The firmware also supports AS5600 odometry as the measured position. In
+`real_uwb` mode a fresh, validated UWB sample verifies that odometry before it
+is submitted to the navigation FSM. An encoder failure or excessive UWB gap
+stops STEP output and latches E-stop. The dashboard seeds odometry from the
+operator-selected start node; the operator must place and orient the trolley
+there physically.
+
 ## 4. Firmware task architecture
 
 ```mermaid

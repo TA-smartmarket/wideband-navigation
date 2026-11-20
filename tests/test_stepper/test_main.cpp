@@ -174,6 +174,29 @@ static void test_direction_follows_the_sign_of_the_command() {
     TEST_ASSERT_FALSE(axis.moving());
 }
 
+static void test_reversal_decelerates_to_zero_before_dir_changes() {
+    StepperConfig config = defaultConfig();
+    config.max_step_accel_hz_per_s = 20000.0f;
+    StepperAxis axis;
+    axis.configure(config);
+
+    axis.setTargetRateHz(509.0f);
+    axis.advance(0.05f);
+    TEST_ASSERT_EQUAL_INT(1, axis.direction());
+
+    // The old signed ramp crossed directly from +509 Hz to -491 Hz here.
+    // Reversal must instead expose a stopped cycle so external DIR has time
+    // to settle before any pulse in the opposite direction.
+    axis.setTargetRateHz(-509.0f);
+    TEST_ASSERT_EQUAL_INT(0, axis.advance(0.05f));
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, axis.currentRateHz());
+    TEST_ASSERT_EQUAL_INT(0, axis.direction());
+
+    axis.advance(0.05f);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, -509.0f, axis.currentRateHz());
+    TEST_ASSERT_EQUAL_INT(-1, axis.direction());
+}
+
 static void test_inverted_direction_flips_only_the_dir_level() {
     StepperConfig config = defaultConfig();
     config.invert_direction = true;
@@ -360,6 +383,7 @@ int main(int, char**) {
     RUN_TEST(test_continuous_mode_reaches_commanded_rate_and_counts_steps);
     RUN_TEST(test_step_count_matches_commanded_distance);
     RUN_TEST(test_direction_follows_the_sign_of_the_command);
+    RUN_TEST(test_reversal_decelerates_to_zero_before_dir_changes);
     RUN_TEST(test_inverted_direction_flips_only_the_dir_level);
     RUN_TEST(test_rate_is_clamped_and_tiny_commands_stop);
     RUN_TEST(test_zero_and_negative_dt_emit_nothing);

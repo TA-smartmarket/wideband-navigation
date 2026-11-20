@@ -1,5 +1,21 @@
 # Testing
 
+## Reproducible readiness matrix
+
+Run the complete software-only matrix from the repository root:
+
+```powershell
+python scripts\validate_project.py
+```
+
+It rebuilds and verifies the C++ artifact before testing, then runs configuration
+and fixture checks, native Unity tests, the Dijkstra oracle, dashboard tests,
+simulator scenarios, and both firmware builds. It writes an ignored
+`build/validation_report.json` containing the revision, commands, output tails,
+and pass/fail state. On Windows it uses `C:\msys64\ucrt64\bin` automatically;
+install MSYS2 plus `mingw-w64-ucrt-x86_64-gcc` when GNU C++ is absent.
+`--skip-firmware` omits firmware compilation and does not count it as passing.
+
 ## 1. Test suites
 
 ```bat

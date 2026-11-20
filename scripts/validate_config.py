@@ -23,7 +23,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 FRAME_ID = "smart_market_map"
 
 NODE_TYPES = {
-    "intersection", "aisle", "destination", "parking", "entry", "exit", "checkout",
+    "intersection", "aisle", "destination", "parking", "entry", "exit", "checkout", "waypoint",
 }
 
 

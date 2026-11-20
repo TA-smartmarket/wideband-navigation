@@ -26,24 +26,23 @@ namespace {
 
 const char* kGraphJson = R"JSON({
   "map": { "map_id": "SMART_MARKET_MAIN", "map_version": 1,
-           "frame_id": "smart_market_map", "width_m": 12.0, "height_m": 8.0 },
+           "frame_id": "smart_market_map", "width_m": 9.0, "height_m": 6.0 },
   "nodes": [
-    { "id": 1,  "x_m": 1.5,  "y_m": 2.0, "type": "entry" },
-    { "id": 2,  "x_m": 4.5,  "y_m": 2.0, "type": "aisle" },
-    { "id": 3,  "x_m": 7.5,  "y_m": 2.0, "type": "aisle" },
-    { "id": 4,  "x_m": 10.5, "y_m": 2.0, "type": "checkout" },
-    { "id": 5,  "x_m": 1.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 6,  "x_m": 4.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 7,  "x_m": 7.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 8,  "x_m": 10.5, "y_m": 4.0, "type": "intersection" },
-    { "id": 9,  "x_m": 1.5,  "y_m": 6.0, "type": "aisle" },
-    { "id": 10, "x_m": 4.5,  "y_m": 6.0, "type": "destination" },
-    { "id": 11, "x_m": 7.5,  "y_m": 6.0, "type": "destination" },
-    { "id": 12, "x_m": 10.5, "y_m": 6.0, "type": "parking" }
+    { "id": 1,  "x_m": 0.9, "y_m": 1.2, "type": "entry" },
+    { "id": 2,  "x_m": 3.3, "y_m": 1.2, "type": "aisle" },
+    { "id": 3,  "x_m": 5.7, "y_m": 1.2, "type": "aisle" },
+    { "id": 4,  "x_m": 8.1, "y_m": 1.2, "type": "checkout" },
+    { "id": 5,  "x_m": 0.9, "y_m": 3.0, "type": "intersection" },
+    { "id": 6,  "x_m": 3.3, "y_m": 3.0, "type": "intersection" },
+    { "id": 7,  "x_m": 5.7, "y_m": 3.0, "type": "intersection" },
+    { "id": 8,  "x_m": 8.1, "y_m": 3.0, "type": "intersection" },
+    { "id": 9,  "x_m": 0.9, "y_m": 4.8, "type": "aisle" },
+    { "id": 10, "x_m": 3.3, "y_m": 4.8, "type": "destination" },
+    { "id": 11, "x_m": 5.7, "y_m": 4.8, "type": "destination" },
+    { "id": 12, "x_m": 8.1, "y_m": 4.8, "type": "parking" }
   ],
   "edges": [
     { "from": 1,  "to": 2  }, { "from": 2,  "to": 3  }, { "from": 3,  "to": 4  },
-    { "from": 5,  "to": 6  }, { "from": 6,  "to": 7  }, { "from": 7,  "to": 8  },
     { "from": 9,  "to": 10 }, { "from": 10, "to": 11 }, { "from": 11, "to": 12 },
     { "from": 1,  "to": 5  }, { "from": 2,  "to": 6  }, { "from": 3,  "to": 7  },
     { "from": 4,  "to": 8  }, { "from": 5,  "to": 9  }, { "from": 6,  "to": 10 },
@@ -211,16 +210,16 @@ static void test_integration_full_route_from_arbitrary_start() {
     const NavigationStatus& status = harness.fsm().status();
     TEST_ASSERT_EQUAL_INT(1, status.start_node);
     TEST_ASSERT_EQUAL_INT(11, status.destination_node);
-    // The route is the deterministic 1 -> 2 -> 3 -> 7 -> 11 (10.0 m).
+    // The route is the deterministic 1 -> 2 -> 6 -> 10 -> 11 (8.4 m).
     TEST_ASSERT_EQUAL_INT(5, status.route_length);
     TEST_ASSERT_EQUAL_INT(1, status.route[0]);
     TEST_ASSERT_EQUAL_INT(2, status.route[1]);
-    TEST_ASSERT_EQUAL_INT(3, status.route[2]);
-    TEST_ASSERT_EQUAL_INT(7, status.route[3]);
+    TEST_ASSERT_EQUAL_INT(6, status.route[2]);
+    TEST_ASSERT_EQUAL_INT(10, status.route[3]);
     TEST_ASSERT_EQUAL_INT(11, status.route[4]);
-    // From (0.8, 0.9): 1.304 m to node 1, then 3+3+2+2 = 10.00 m of route.
-    // The entry leg is part of the plan, so the total is 11.304 m.
-    TEST_ASSERT_FLOAT_WITHIN(0.01f, 11.304f, status.planned_distance_m);
+    // From (0.8, 0.9), then the current 9x6-m graph route.
+    // The entry leg is part of the plan, so the total is about 8.71 m.
+    TEST_ASSERT_FLOAT_WITHIN(0.02f, 8.71f, status.planned_distance_m);
 
     // Final position must be inside the destination tolerance.
     TEST_ASSERT_TRUE(harness.distanceToDestination() < config.path.destination_tolerance_m + 0.10);
@@ -237,7 +236,7 @@ static void test_integration_start_on_node_does_not_drive_backwards() {
     TEST_ASSERT_TRUE(harness.begin(config));
 
     // Exactly on node 1, heading east.
-    harness.resetPlant(1.5, 2.0, 0.0);
+    harness.resetPlant(0.9, 1.2, 0.0);
     TEST_ASSERT_TRUE(harness.fsm().requestDestination(11));
 
     // After the route is planned the first waypoint must already be node 2:

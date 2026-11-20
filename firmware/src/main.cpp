@@ -18,29 +18,46 @@
 #include <Arduino.h>
 
 #include <cstring>
+#include <cmath>
 
 #include "app_config.hpp"
 #include "app_context.hpp"
 #include "config_store.hpp"
 #include "motor_driver.hpp"
+#include "mqtt_telemetry.hpp"
 #include "navigation/config_loader.hpp"
 #include "navigation/logging.hpp"
+#include "navigation/position_validator.hpp"
 #include "navigation/time_utils.hpp"
 #include "network_position_provider.hpp"
 #include "pin_config.hpp"
 #include "position_provider.hpp"
 #include "serial_protocol.hpp"
+#include "serial_output.hpp"
 #include "stepper_driver.hpp"
 #include "telemetry.hpp"
 #include "wheel_control.hpp"
 
-#if CONFIG_FREERTOS_USE_TASK_WATCHDOG
+#if CONFIG_FREERTOS_USE_TASK_WATCHDOG && NAVIGATION_ENABLE_TASK_WATCHDOG
 #include <esp_task_wdt.h>
 #endif
 
 namespace {
 
 using namespace firmware;
+
+constexpr EventBits_t kStartupReadyBit = BIT0;
+
+void waitForStartup(FirmwareContext& ctx) {
+    // A missing gate is treated as a fatal setup error, never as permission to
+    // run with a partially initialised motor or telemetry pointer.
+    if (ctx.startup_gate == nullptr) {
+        vTaskSuspend(nullptr);
+        return;
+    }
+    xEventGroupWaitBits(ctx.startup_gate, kStartupReadyBit, pdFALSE, pdTRUE,
+                        portMAX_DELAY);
+}
 
 // --- logging ---------------------------------------------------------------
 
@@ -53,15 +70,143 @@ void serialLogSink(nav::LogLevel level, const char* tag, const char* message) {
         case nav::LogLevel::DEBUG: name = "DEBUG"; break;
         case nav::LogLevel::TRACE: name = "TRACE"; break;
     }
-    Serial.printf("[%s][%s] %s\n", name, tag, message);
+    serialPrintfLocked("[%s][%s] %s\n", name, tag, message);
 }
+
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY && NAVIGATION_ENABLE_MQTT_CONTROL && NAVIGATION_ENABLE_MQTT_SERVICE
+/// Apply the same bounded dashboard protocol over MQTT. The parser rejects
+/// malformed/non-finite values before this function runs, and MQTT is compiled
+/// in only for the protected local-LAN deployment profile.
+void applyMqttDashboardCommand(const DashboardCommand& command, FirmwareContext& ctx) {
+    char response[640]{};
+    switch (command.kind) {
+        case DashboardCommandKind::HELLO:
+            std::snprintf(response, sizeof(response),
+                          "{\"type\":\"ack\",\"protocol_version\":%u,\"config_revision\":%lu,\"message\":\"Smart Trolley firmware %s\"}",
+                          kDashboardProtocolVersion,
+                          static_cast<unsigned long>(configStore().revision()), FIRMWARE_VERSION);
+            break;
+        case DashboardCommandKind::MANUAL:
+            ctx.manual_linear_mps = command.linear_mps;
+            ctx.manual_angular_radps = command.angular_radps;
+            ctx.manual_heartbeat_ms = static_cast<uint32_t>(nav::monotonicMillis());
+            ctx.command_manual_update = true;
+            return;  // Heartbeats deliberately do not flood the response topic.
+        case DashboardCommandKind::ESTOP:
+            ctx.command_estop = true;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"E-stop queued\"}");
+            break;
+        case DashboardCommandKind::RESET_ESTOP:
+            ctx.command_clear_estop = true;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"E-stop reset queued\"}");
+            break;
+        case DashboardCommandKind::NAVIGATION_STOP:
+            ctx.command_stop = true;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"navigation stop queued\"}");
+            break;
+        case DashboardCommandKind::NAVIGATION_DESTINATION:
+            ctx.manual_active = false;
+            ctx.command_destination = command.node_id;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"destination queued\"}");
+            break;
+        case DashboardCommandKind::CONFIG_GET:
+        {
+            nav::NavigationConfig active = wheelControl().enabled()
+                ? wheelControl().configSnapshot() : motorDriverConfig();
+            active.position_source = ctx.position_source;
+            configStore().formatJson(active, response, sizeof(response));
+            break;
+        }
+        case DashboardCommandKind::CONFIG_SAVE:
+        {
+            nav::NavigationConfig active = wheelControl().enabled()
+                ? wheelControl().configSnapshot() : motorDriverConfig();
+            active.position_source = ctx.position_source;
+            const bool ok = configStore().save(active);
+            std::snprintf(response, sizeof(response),
+                          "{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":%lu,\"message\":\"%s\"}",
+                          ok ? "ack" : "error", static_cast<unsigned long>(configStore().revision()),
+                          ok ? "configuration persisted" : "configuration save failed");
+            break;
+        }
+        case DashboardCommandKind::CONFIG_DEFAULTS:
+        {
+            ctx.manual_active = false;
+            ctx.command_stop = true;
+            const bool ok = configStore().restoreDefaults();
+            std::snprintf(response, sizeof(response),
+                          "{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":0,\"message\":\"%s\"}",
+                          ok ? "ack" : "error",
+                          ok ? "factory defaults selected; reboot required" : "failed to restore defaults");
+            break;
+        }
+        case DashboardCommandKind::PID_SET:
+        {
+            bool ok = true;
+            if (command.heading_pid) {
+                ok = false;
+                if (xSemaphoreTake(ctx.status_mutex, pdMS_TO_TICKS(20)) == pdTRUE) {
+                    ok = ctx.fsm.setHeadingPidGains(command.kp, command.ki, command.kd);
+                    xSemaphoreGive(ctx.status_mutex);
+                }
+                ok = ok && wheelControl().recordHeadingPid(command.kp, command.ki, command.kd);
+            } else {
+                ok = wheelControl().requestPidUpdate(command.right_wheel, command.kp,
+                                                     command.ki, command.kd);
+            }
+            std::snprintf(response, sizeof(response),
+                          "{\"type\":\"%s\",\"protocol_version\":1,\"message\":\"%s PID %s\"}",
+                          ok ? "ack" : "error",
+                          command.heading_pid ? "heading" : command.right_wheel ? "right wheel" : "left wheel",
+                          ok ? "applied (not yet persisted)" : "rejected");
+            break;
+        }
+        case DashboardCommandKind::POSITION_SOURCE:
+            ctx.command_position_source = command.position_source;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"position source change queued; navigation will stop\"}");
+            break;
+        case DashboardCommandKind::ENCODER_ZERO:
+            ctx.command_encoder_zero = true;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"encoder zero queued; navigation will stop\"}");
+            break;
+        case DashboardCommandKind::ODOMETRY_SET_POSE:
+            ctx.command_pose_x_m = command.pose_x_m;
+            ctx.command_pose_y_m = command.pose_y_m;
+            ctx.command_pose_heading_rad = command.pose_heading_rad;
+            ctx.command_set_pose = true;
+            std::snprintf(response, sizeof(response), "{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"initial pose queued; navigation will stop\"}");
+            break;
+        default:
+            NAV_LOG_WARN("MQTT", "rejected command outside MQTT control allow-list");
+            std::snprintf(response, sizeof(response), "{\"type\":\"error\",\"protocol_version\":1,\"message\":\"unsupported MQTT command\"}");
+            break;
+    }
+    mqttTelemetry().queueResponse(response);
+}
+#endif
 
 // --- tasks -----------------------------------------------------------------
 
 /// Reads position lines and publishes the newest accepted sample.
 void taskPosition(void*) {
     FirmwareContext& ctx = context();
+    waitForStartup(ctx);
 
+#if NAVIGATION_USE_MOCK_POSITION
+    // Bench/web-control profile receives mock position data through the
+    // console command task. Do not initialise UART1 on GPIO43/44: on this
+    // DevKitC-1 those pins are also the USB-UART console path (COM9).
+    TickType_t last_wake = xTaskGetTickCount();
+    for (;;) {
+        if (ctx.position_source == nav::PositionSourceMode::ENCODER_ODOMETRY) {
+            nav::PositionMeasurement measurement;
+            const uint64_t now_ms = nav::monotonicMillis();
+            ctx.position_verified = wheelControl().odometryMeasurement(measurement, now_ms);
+            if (ctx.position_verified) ctx.latest_position.publish(measurement, now_ms);
+        }
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(POSITION_PERIOD_MS));
+    }
+#else
 #if NAVIGATION_POSITION_TRANSPORT == 1
     // HTTP pull from the positioning server (GET /api/v1/navigation/position).
     static firmware::HttpPositionProvider http_provider(NAVIGATION_SERVER_URL, TROLLEY_ID);
@@ -85,14 +230,54 @@ void taskPosition(void*) {
 #endif
 
     TickType_t last_wake = xTaskGetTickCount();
+    nav::PositionMeasurement last_uwb{};
+    uint64_t last_uwb_received_ms = 0;
+    nav::PositionSourceMode previous_source = ctx.position_source;
     for (;;) {
         nav::PositionMeasurement measurement;
         const uint64_t now_ms = nav::monotonicMillis();
+        if (ctx.position_source != previous_source) {
+            last_uwb_received_ms = 0;
+            ctx.uwb_received_ms = 0;
+            ctx.uwb_fix_valid = false;
+            previous_source = ctx.position_source;
+        }
         bool has_measurement = false;
         if (ctx.position_source == nav::PositionSourceMode::ENCODER_ODOMETRY) {
             has_measurement = wheelControl().odometryMeasurement(measurement, now_ms);
+            ctx.position_verified = has_measurement;
+            ctx.uwb_fix_valid = false;
         } else if (ctx.position_source == nav::PositionSourceMode::REAL_UWB) {
-            has_measurement = real_provider.poll(measurement, now_ms);
+            nav::PositionMeasurement candidate;
+            if (real_provider.poll(candidate, now_ms)) {
+                const nav::NavigationConfig active = wheelControl().configSnapshot();
+                if (nav::validateMeasurement(candidate, active.position,
+                        active.map_width_m, active.map_height_m, now_ms).accepted &&
+                    std::strcmp(candidate.trolley_id, TROLLEY_ID) == 0) {
+                    last_uwb = candidate;
+                    last_uwb_received_ms = now_ms;
+                    ctx.uwb_x_m = candidate.position.x_m;
+                    ctx.uwb_y_m = candidate.position.y_m;
+                    ctx.uwb_quality = candidate.quality;
+                }
+            }
+            const nav::NavigationConfig active = wheelControl().configSnapshot();
+            const bool fresh = last_uwb_received_ms != 0 &&
+                now_ms - last_uwb_received_ms <= active.position.timeout_ms;
+            ctx.uwb_fix_valid = fresh;
+            ctx.uwb_received_ms = last_uwb_received_ms;
+            const bool encoder_ready = wheelControl().odometryMeasurement(measurement, now_ms);
+            if (fresh && encoder_ready) {
+                const float dx = measurement.position.x_m - last_uwb.position.x_m;
+                const float dy = measurement.position.y_m - last_uwb.position.y_m;
+                ctx.uwb_disagreement_m = std::sqrt(dx * dx + dy * dy);
+            }
+            has_measurement = fresh && encoder_ready &&
+                ctx.uwb_disagreement_m <= NAVIGATION_MAX_UWB_ODOMETRY_GAP_M;
+            ctx.position_verified = has_measurement;
+        } else {
+            ctx.position_verified = false;
+            ctx.uwb_fix_valid = false;
         }
         if (has_measurement) {
             // The FSM performs full validation; the task only forwards the
@@ -102,12 +287,14 @@ void taskPosition(void*) {
         }
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(POSITION_PERIOD_MS));
     }
+#endif  // NAVIGATION_USE_MOCK_POSITION
 }
 
 /// Runs AS5600 acquisition, wheel velocity PID, odometry and STEP-rate output.
 /// Navigation only publishes bounded wheel targets; this task owns feedback
 /// control at 100 Hz and stops the actuator on any encoder fault.
 void taskWheelControl(void*) {
+    waitForStartup(context());
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
         wheelControl().update(nav::monotonicNanos() / 1000ull);
@@ -118,11 +305,29 @@ void taskWheelControl(void*) {
 /// Parses console commands and raises the corresponding flags.
 void taskCommands(void*) {
     FirmwareContext& ctx = context();
+    waitForStartup(ctx);
     char line[SERIAL_LINE_BUFFER];
     std::size_t length = 0;
     nav::SerialPositionProvider mock_line_parser(nullptr, TROLLEY_ID);
 
     for (;;) {
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY && NAVIGATION_ENABLE_MQTT_CONTROL
+        char mqtt_line[SERIAL_LINE_BUFFER]{};
+        if (mqttTelemetry().takeCommand(mqtt_line, sizeof(mqtt_line))) {
+            DashboardCommand mqtt_command;
+            char mqtt_error[96] = {};
+            if (parseDashboardCommand(mqtt_line, mqtt_command, mqtt_error, sizeof(mqtt_error))) {
+                applyMqttDashboardCommand(mqtt_command, ctx);
+            } else {
+                NAV_LOG_WARN("MQTT", "rejected invalid command: %s", mqtt_error);
+                char response[192]{};
+                std::snprintf(response, sizeof(response),
+                              "{\"type\":\"error\",\"protocol_version\":1,\"message\":\"%s\"}",
+                              mqtt_error);
+                mqttTelemetry().queueResponse(response);
+            }
+        }
+#endif
         while (Serial.available() > 0) {
             const char c = static_cast<char>(Serial.read());
             if (c == '\n' || c == '\r') {
@@ -143,7 +348,7 @@ void taskCommands(void*) {
                         ++ctx.position_samples;
                     } else {
                         ++g_malformed_position_lines;
-                        Serial.println("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"invalid mock position\"}");
+                        serialPrintlnLocked("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"invalid mock position\"}");
                     }
                 } else if (line[0] == '{' && std::strstr(line, "\"type\"") != nullptr) {
                     DashboardCommand dashboard_command;
@@ -151,7 +356,7 @@ void taskCommands(void*) {
                     if (parseDashboardCommand(line, dashboard_command, dashboard_error, sizeof(dashboard_error))) {
                         switch (dashboard_command.kind) {
                             case DashboardCommandKind::HELLO:
-                                Serial.printf("{\"type\":\"ack\",\"protocol_version\":%u,\"config_revision\":%lu,\"message\":\"Smart Trolley firmware %s\"}\n",
+                                serialPrintfLocked("{\"type\":\"ack\",\"protocol_version\":%u,\"config_revision\":%lu,\"message\":\"Smart Trolley firmware %s\"}\n",
                                               kDashboardProtocolVersion,
                                               static_cast<unsigned long>(configStore().revision()),
                                               FIRMWARE_VERSION);
@@ -159,7 +364,12 @@ void taskCommands(void*) {
                             case DashboardCommandKind::MANUAL:
                                 ctx.manual_linear_mps = dashboard_command.linear_mps;
                                 ctx.manual_angular_radps = dashboard_command.angular_radps;
-                                ctx.manual_heartbeat_ms = millis();
+                                // The timeout consumer uses nav::monotonicMillis().
+                                // Using millis() here can put the two samples on
+                                // opposite sides of a tick and underflow the
+                                // unsigned age calculation into an instant stop.
+                                ctx.manual_heartbeat_ms =
+                                    static_cast<uint32_t>(nav::monotonicMillis());
                                 ctx.command_manual_update = true;
                                 break;
                             case DashboardCommandKind::ESTOP: ctx.command_estop = true; break;
@@ -176,7 +386,7 @@ void taskCommands(void*) {
                                     ? wheelControl().configSnapshot() : motorDriverConfig();
                                 active.position_source = ctx.position_source;
                                 configStore().formatJson(active, config_json, sizeof(config_json));
-                                Serial.print(config_json);
+                                serialPrintLocked(config_json);
                                 break;
                             }
                             case DashboardCommandKind::CONFIG_SAVE:
@@ -185,7 +395,7 @@ void taskCommands(void*) {
                                     ? wheelControl().configSnapshot() : motorDriverConfig();
                                 active.position_source = ctx.position_source;
                                 const bool ok = configStore().save(active);
-                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":%lu,\"message\":\"%s\"}\n",
+                                serialPrintfLocked("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":%lu,\"message\":\"%s\"}\n",
                                               ok ? "ack" : "error",
                                               static_cast<unsigned long>(configStore().revision()),
                                               ok ? "configuration persisted" : "configuration save failed");
@@ -196,7 +406,7 @@ void taskCommands(void*) {
                                 ctx.manual_active = false;
                                 ctx.command_stop = true;
                                 const bool ok = configStore().restoreDefaults();
-                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":0,\"message\":\"%s\"}\n",
+                                serialPrintfLocked("{\"type\":\"%s\",\"protocol_version\":1,\"config_revision\":0,\"message\":\"%s\"}\n",
                                               ok ? "ack" : "error",
                                               ok ? "factory defaults selected; reboot required" : "failed to restore defaults");
                                 break;
@@ -220,7 +430,7 @@ void taskCommands(void*) {
                                         dashboard_command.right_wheel, dashboard_command.kp,
                                         dashboard_command.ki, dashboard_command.kd);
                                 }
-                                Serial.printf("{\"type\":\"%s\",\"protocol_version\":1,\"message\":\"%s PID %s\"}\n",
+                                serialPrintfLocked("{\"type\":\"%s\",\"protocol_version\":1,\"message\":\"%s PID %s\"}\n",
                                               ok ? "ack" : "error",
                                               dashboard_command.heading_pid ? "heading" :
                                               dashboard_command.right_wheel ? "right wheel" : "left wheel",
@@ -229,33 +439,33 @@ void taskCommands(void*) {
                             }
                             case DashboardCommandKind::POSITION_SOURCE:
                                 ctx.command_position_source = dashboard_command.position_source;
-                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"position source change queued; navigation will stop\"}");
+                                serialPrintlnLocked("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"position source change queued; navigation will stop\"}");
                                 break;
                             case DashboardCommandKind::ENCODER_ZERO:
                                 ctx.command_encoder_zero = true;
-                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"encoder zero queued; navigation will stop\"}");
+                                serialPrintlnLocked("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"encoder zero queued; navigation will stop\"}");
                                 break;
                             case DashboardCommandKind::ODOMETRY_SET_POSE:
                                 ctx.command_pose_x_m = dashboard_command.pose_x_m;
                                 ctx.command_pose_y_m = dashboard_command.pose_y_m;
                                 ctx.command_pose_heading_rad = dashboard_command.pose_heading_rad;
                                 ctx.command_set_pose = true;
-                                Serial.println("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"initial pose queued; navigation will stop\"}");
+                                serialPrintlnLocked("{\"type\":\"ack\",\"protocol_version\":1,\"message\":\"initial pose queued; navigation will stop\"}");
                                 break;
                             default: break;
                         }
                     } else {
-                        Serial.printf("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"%s\"}\n", dashboard_error);
+                        serialPrintfLocked("{\"type\":\"error\",\"protocol_version\":1,\"message\":\"%s\"}\n", dashboard_error);
                     }
                 } else if (nav::parseCommand(line, command)) {
                     switch (command.kind) {
                         case nav::CommandKind::DESTINATION:
                             if (command.argument > 0) {
                                 ctx.command_destination = command.argument;
-                                Serial.printf("CMD: destination queued -> node %d\n",
+                                serialPrintfLocked("CMD: destination queued -> node %d\n",
                                               command.argument);
                             } else {
-                                Serial.println("CMD: usage: destination <node_id>");
+                                serialPrintlnLocked("CMD: usage: destination <node_id>");
                             }
                             break;
                         case nav::CommandKind::START:
@@ -278,14 +488,35 @@ void taskCommands(void*) {
                             break;
                         case nav::CommandKind::DEBUG_ON:
                             nav::setLogLevel(nav::LogLevel::DEBUG);
-                            Serial.println("CMD: debug logging on");
+                            serialPrintlnLocked("CMD: debug logging on");
                             break;
                         case nav::CommandKind::DEBUG_OFF:
                             nav::setLogLevel(nav::LogLevel::INFO);
-                            Serial.println("CMD: debug logging off");
+                            serialPrintlnLocked("CMD: debug logging off");
                             break;
                         case nav::CommandKind::HELP:
-                            Serial.print(nav::commandHelpText());
+                            serialPrintLocked(nav::commandHelpText());
+                            break;
+                        case nav::CommandKind::STEPPER_STATUS:
+                            if (StepperMotorDriver* stepper = stepperDriver()) {
+                                const nav::StepperAxis& left = stepper->leftAxis();
+                                const nav::StepperAxis& right = stepper->rightAxis();
+                                serialPrintfLocked(
+                                    "{\"type\":\"stepper_status\",\"left_steps\":%llu,"
+                                    "\"right_steps\":%llu,\"left_gpio_pulses\":%lu,"
+                                    "\"right_gpio_pulses\":%lu,\"left_rate_hz\":%.2f,"
+                                    "\"right_rate_hz\":%.2f,\"left_dir\":%d,\"right_dir\":%d}\n",
+                                    static_cast<unsigned long long>(left.emittedSteps()),
+                                    static_cast<unsigned long long>(right.emittedSteps()),
+                                    static_cast<unsigned long>(stepper->leftHardwarePulses()),
+                                    static_cast<unsigned long>(stepper->rightHardwarePulses()),
+                                    static_cast<double>(left.currentRateHz()),
+                                    static_cast<double>(right.currentRateHz()),
+                                    left.direction(), right.direction());
+                            } else {
+                                serialPrintlnLocked(
+                                    "{\"type\":\"error\",\"message\":\"stepper driver unavailable\"}");
+                            }
                             break;
                         default:
                             // status/graph/route/position are answered directly
@@ -293,7 +524,7 @@ void taskCommands(void*) {
                             break;
                     }
                     if (command.kind == nav::CommandKind::UNKNOWN) {
-                        Serial.printf("CMD: unknown command '%s' (try 'help')\n", command.raw);
+                        serialPrintfLocked("CMD: unknown command '%s' (try 'help')\n", command.raw);
                     }
                 }
                 length = 0;
@@ -311,9 +542,23 @@ void taskCommands(void*) {
     }
 }
 
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY && NAVIGATION_ENABLE_MQTT_SERVICE
+/// Owns all Wi-Fi socket traffic. It intentionally has no authority over the
+/// motors: MQTT messages are copied to a bounded queue consumed by taskCommands.
+void taskMqtt(void*) {
+    NAV_LOG_INFO("MQTT", "network task started");
+    TickType_t last_wake = xTaskGetTickCount();
+    for (;;) {
+        mqttTelemetry().service();
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(10));
+    }
+}
+#endif
+
 /// Publishes telemetry at the configured rate.
 void taskTelemetry(void*) {
     FirmwareContext& ctx = context();
+    waitForStartup(ctx);
     TickType_t last_wake = xTaskGetTickCount();
 
     for (;;) {
@@ -321,10 +566,21 @@ void taskTelemetry(void*) {
             const nav::NavigationStatus status = ctx.fsm.status();
             xSemaphoreGive(ctx.status_mutex);
             ctx.telemetry->publishJson(status, nav::monotonicMillis());
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY
+            // TaskCommands owns PubSubClient::loop()/network I/O. This task
+            // only enqueues telemetry through the mirror sink.
+#endif
             if (wheelControl().enabled()) {
                 ctx.telemetry->publishWheelJson(wheelControl().snapshot(),
                                                 nav::monotonicMillis());
             }
+            const uint64_t now_ms = nav::monotonicMillis();
+            ctx.telemetry->publishVerificationJson(
+                static_cast<unsigned>(ctx.position_source),
+                ctx.position_verified, ctx.uwb_fix_valid, ctx.uwb_x_m,
+                ctx.uwb_y_m, ctx.uwb_quality, ctx.uwb_disagreement_m,
+                ctx.uwb_received_ms == 0 ? UINT32_MAX :
+                    static_cast<uint32_t>(now_ms - ctx.uwb_received_ms), now_ms);
         }
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(TELEMETRY_PERIOD_MS));
     }
@@ -333,6 +589,7 @@ void taskTelemetry(void*) {
 /// Runs the navigation control loop at 20 Hz and actuates the motors.
 void taskNavigation(void*) {
     FirmwareContext& ctx = context();
+    waitForStartup(ctx);
     IMotorDriver& motors = motorDriver();
     nav::LogLevel last_logged_state = nav::LogLevel::INFO;
     (void)last_logged_state;
@@ -341,7 +598,7 @@ void taskNavigation(void*) {
     // believes its state to be.
     motors.stop();
 
-#if CONFIG_FREERTOS_USE_TASK_WATCHDOG
+#if CONFIG_FREERTOS_USE_TASK_WATCHDOG && NAVIGATION_ENABLE_TASK_WATCHDOG
     // Subscribe only this task: the watchdog exists to catch a stalled *control
     // loop*, not to police the I/O tasks.
     esp_task_wdt_add(nullptr);
@@ -405,6 +662,8 @@ void taskNavigation(void*) {
             wheelControl().stop();
             ctx.latest_position.clear();
             ctx.fsm.notifyPositionStreamLost();
+            ctx.position_verified = false;
+            ctx.uwb_fix_valid = false;
             ctx.position_source = static_cast<nav::PositionSourceMode>(requested);
             if (wheelControl().enabled()) wheelControl().setPositionSource(ctx.position_source);
             ctx.telemetry->publishEvent("POSITION_SOURCE",
@@ -433,6 +692,8 @@ void taskNavigation(void*) {
             pose.heading_rad = ctx.command_pose_heading_rad;
             const bool ok = wheelControl().requestOdometryReset(pose, false);
             ctx.latest_position.clear();
+            ctx.position_verified = false;
+            ctx.fsm.notifyPositionStreamLost();
             ctx.telemetry->publishEvent("ODOMETRY_POSE",
                 ok ? "initial pose applied; explicit start required" : "initial pose rejected");
         }
@@ -453,7 +714,21 @@ void taskNavigation(void*) {
         nav::PositionMeasurement measurement;
         uint64_t received_at_ms = 0;
         uint32_t sequence = 0;
-        if (ctx.latest_position.read(measurement, received_at_ms, sequence)) {
+        const bool source_ready = ctx.position_source == nav::PositionSourceMode::EXTERNAL_MOCK_UWB ||
+                                  ctx.position_verified;
+        if (!source_ready && ctx.fsm.status().state == nav::NavState::NAVIGATING) {
+            // A missing encoder or disagreeing/stale UWB fix must remove STEP
+            // output immediately. Recovery requires explicit E-stop reset/start.
+            if (wheelControl().enabled()) wheelControl().emergencyStop();
+            else if (StepperMotorDriver* stepper = stepperDriver()) stepper->emergencyStop();
+            else motors.stop();
+            ctx.fsm.emergencyStop();
+            ctx.telemetry->publishEvent("POSITION", "position verification failed; E-stop latched");
+        }
+        if (!source_ready) {
+            ctx.fsm.notifyPositionStreamLost();
+        }
+        if (source_ready && ctx.latest_position.read(measurement, received_at_ms, sequence)) {
             const nav::MeasurementStatus status =
                 ctx.fsm.submitPosition(measurement, received_at_ms);
             if (status != nav::MeasurementStatus::OK) {
@@ -487,7 +762,7 @@ void taskNavigation(void*) {
             } else {
                 motors.setBoth(manual_motor.left, manual_motor.right);
             }
-        } else if (status.state == nav::NavState::NAVIGATING && !ctx.fsm.emergencyStopActive()) {
+        } else if (source_ready && status.state == nav::NavState::NAVIGATING && !ctx.fsm.emergencyStopActive()) {
             if (wheelControl().enabled()) {
                 wheelControl().setNormalizedTarget(status.motor.left, status.motor.right);
             } else {
@@ -495,6 +770,12 @@ void taskNavigation(void*) {
             }
         } else {
             if (wheelControl().enabled()) wheelControl().stop(); else motors.stop();
+        }
+
+        // The high-rate ISR only emits integer GPIO pulses. Advance the
+        // float-based motion profile here, in normal task context.
+        if (StepperMotorDriver* stepper = stepperDriver()) {
+            stepper->planPulseGenerator(static_cast<float>(NAVIGATION_PERIOD_MS) / 1000.0f);
         }
 
         // --- loop timing diagnostics -------------------------------------
@@ -508,7 +789,7 @@ void taskNavigation(void*) {
                          static_cast<unsigned long>(NAVIGATION_PERIOD_MS * 1000u));
         }
 
-#if CONFIG_FREERTOS_USE_TASK_WATCHDOG
+#if CONFIG_FREERTOS_USE_TASK_WATCHDOG && NAVIGATION_ENABLE_TASK_WATCHDOG
         esp_task_wdt_reset();
 #endif
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(NAVIGATION_PERIOD_MS));
@@ -520,6 +801,7 @@ void taskNavigation(void*) {
 void setup() {
     // 1. Serial first: the very first thing a developer needs is the log.
     Serial.begin(115200);
+    initialiseSerialOutput();
     const uint32_t serial_start = millis();
     while (!Serial && (millis() - serial_start) < 1500) {
         delay(10);  // bounded wait: never block start-up indefinitely
@@ -536,6 +818,13 @@ void setup() {
     Serial.println();
     NAV_LOG_INFO("BOOT", "Smart Trolley navigation firmware v%s (ESP32-S3)",
                  FIRMWARE_VERSION);
+
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY
+    // WiFi.begin() is called from Arduino's setup task, matching the stable
+    // diagnostic image. TaskMqtt subsequently owns only MQTT socket I/O.
+    delay(1200);
+    mqttTelemetry().begin();
+#endif
 
     // 2. Load the configuration BEFORE building the actuator, because
     //    `drive_kind` selects which driver to instantiate.
@@ -554,7 +843,10 @@ void setup() {
             delay(1000);
         }
     }
-    const bool loaded_persisted_config = configStore().begin(config);
+    bool loaded_persisted_config = false;
+#if NAVIGATION_ENABLE_PERSISTED_CONFIG
+    loaded_persisted_config = configStore().begin(config);
+#endif
     if (!nav::validateConfig(config).valid) {
         NAV_LOG_ERROR("BOOT", "persisted configuration invalid; halting safely");
         for (;;) delay(1000);
@@ -564,6 +856,11 @@ void setup() {
                  static_cast<unsigned long>(configStore().revision()));
 #if NAVIGATION_USE_MOCK_POSITION
     config.position_source = nav::PositionSourceMode::EXTERNAL_MOCK_UWB;
+#endif
+#if !NAVIGATION_ENABLE_WHEEL_CLOSED_LOOP
+    // Local open-loop bench profile: do not start AS5600 I2C work when the
+    // encoder hardware is unavailable or still being wired.
+    config.wheel_closed_loop_enabled = false;
 #endif
     setMotorDriverConfig(config);
 
@@ -594,9 +891,22 @@ void setup() {
             delay(1000);
         }
     }
+    ctx.startup_gate = xEventGroupCreate();
+    if (ctx.startup_gate == nullptr) {
+        NAV_LOG_ERROR("BOOT", "cannot create startup gate; halting with motors stopped");
+        motorDriver().stop();
+        for (;;) {
+            delay(1000);
+        }
+    }
 
     static SerialTelemetrySink serial_sink(Serial);
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY
+    static MqttTelemetrySink& mqtt_sink = mqttTelemetry();
+    static TelemetryPublisher telemetry(&serial_sink, &mqtt_sink);
+#else
     static TelemetryPublisher telemetry(&serial_sink);
+#endif
     ctx.telemetry = &telemetry;
 
     // 4. Initialise the navigation core with the same graph and configuration.
@@ -613,7 +923,14 @@ void setup() {
                  static_cast<unsigned long>(1000u / NAVIGATION_PERIOD_MS),
                  static_cast<unsigned long>(1000u / TELEMETRY_PERIOD_MS));
 
-    // 4. Start the tasks.
+    // 4. Initialise the watchdog before creating its subscribed task. The
+    // navigation task can run immediately after xTaskCreatePinnedToCore(), so
+    // initialising it later races esp_task_wdt_add() during boot.
+#if CONFIG_FREERTOS_USE_TASK_WATCHDOG && NAVIGATION_ENABLE_TASK_WATCHDOG
+    esp_task_wdt_init(NAVIGATION_WATCHDOG_TIMEOUT_S, true);
+#endif
+
+    // 5. Start the tasks.
     const BaseType_t navigation_ok = xTaskCreatePinnedToCore(
         taskNavigation, "TaskNavigation", NAVIGATION_TASK_STACK, nullptr,
         NAVIGATION_TASK_PRIORITY, nullptr, NAVIGATION_TASK_CORE);
@@ -627,8 +944,13 @@ void setup() {
         taskPosition, "TaskPosition", COMMUNICATION_TASK_STACK, nullptr,
         POSITION_TASK_PRIORITY, nullptr, COMMUNICATION_TASK_CORE);
     const BaseType_t command_ok = xTaskCreatePinnedToCore(
-        taskCommands, "TaskCommands", COMMUNICATION_TASK_STACK, nullptr,
+        taskCommands, "TaskCommands", COMMAND_TASK_STACK, nullptr,
         COMMAND_TASK_PRIORITY, nullptr, COMMUNICATION_TASK_CORE);
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY && NAVIGATION_ENABLE_MQTT_SERVICE
+    const BaseType_t mqtt_ok = xTaskCreatePinnedToCore(
+        taskMqtt, "TaskMqtt", MQTT_TASK_STACK, nullptr,
+        MQTT_TASK_PRIORITY, nullptr, COMMUNICATION_TASK_CORE);
+#endif
 #if NAVIGATION_ENABLE_TELEMETRY
     const BaseType_t telemetry_ok = xTaskCreatePinnedToCore(
         taskTelemetry, "TaskTelemetry", TELEMETRY_TASK_STACK, nullptr,
@@ -637,6 +959,9 @@ void setup() {
 
     if (navigation_ok != pdPASS || wheel_control_ok != pdPASS ||
         position_ok != pdPASS || command_ok != pdPASS
+#if NAVIGATION_ENABLE_MQTT_TELEMETRY && NAVIGATION_ENABLE_MQTT_SERVICE
+        || mqtt_ok != pdPASS
+#endif
 #if NAVIGATION_ENABLE_TELEMETRY
         || telemetry_ok != pdPASS
 #endif
@@ -648,18 +973,13 @@ void setup() {
         }
     }
 
-    // 5. Watchdog: only enabled once the control loop exists, so the WDT can
-    //    actually catch a stall in it.
-#if CONFIG_FREERTOS_USE_TASK_WATCHDOG
-    esp_task_wdt_init(NAVIGATION_WATCHDOG_TIMEOUT_S, true);
-#endif
-
     ctx.navigation_ready = true;
     NAV_LOG_INFO("BOOT", "ready: motors stopped, waiting for a destination and a valid position");
     Serial.println("Send: CMD:destination 11   then   CMD:start");
     Serial.println("Or:   {\"schema_version\":1,\"trolley_id\":\"TROLLEY_01\","
                    "\"frame_id\":\"smart_market_map\",\"timestamp_ms\":1000,"
                    "\"position\":{\"x_m\":0.8,\"y_m\":0.9},\"quality\":0.95,\"valid\":true}");
+    xEventGroupSetBits(ctx.startup_gate, kStartupReadyBit);
 }
 
 void loop() {

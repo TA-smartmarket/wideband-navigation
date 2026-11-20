@@ -3,7 +3,7 @@
   "source_of_truth": "navigation_core (C++ Dijkstra)",
   "graph_path": "config/graph.json",
   "node_count": 12,
-  "edge_count": 17,
+  "edge_count": 14,
   "fixtures": [
     {
       "start_node": 1,
@@ -12,11 +12,11 @@
       "route": [
         1,
         2,
-        3,
-        7,
+        6,
+        10,
         11
       ],
-      "distance_m": 10.0,
+      "distance_m": 8.3933,
       "reachable": true
     },
     {
@@ -31,7 +31,7 @@
         8,
         12
       ],
-      "distance_m": 13.0,
+      "distance_m": 10.8,
       "reachable": true
     },
     {
@@ -40,13 +40,13 @@
       "description": "top-left corner to the checkout row",
       "route": [
         9,
-        5,
-        1,
-        2,
+        10,
+        11,
+        7,
         3,
         4
       ],
-      "distance_m": 13.0,
+      "distance_m": 10.7933,
       "reachable": true
     },
     {
@@ -67,7 +67,7 @@
         1,
         2
       ],
-      "distance_m": 3.0,
+      "distance_m": 2.4,
       "reachable": true
     },
     {
@@ -80,7 +80,7 @@
         6,
         10
       ],
-      "distance_m": 7.0,
+      "distance_m": 6.0,
       "reachable": true
     },
     {
@@ -89,13 +89,13 @@
       "description": "reverse of the long diagonal",
       "route": [
         12,
-        8,
-        4,
-        3,
-        2,
+        11,
+        10,
+        9,
+        5,
         1
       ],
-      "distance_m": 13.0,
+      "distance_m": 10.8,
       "reachable": true
     },
     {
@@ -105,12 +105,12 @@
       "route": [
         4,
         3,
-        2,
-        1,
-        5,
+        7,
+        11,
+        10,
         9
       ],
-      "distance_m": 13.0,
+      "distance_m": 10.7933,
       "reachable": true
     }
   ]

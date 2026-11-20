@@ -1,4 +1,4 @@
-#include "navigation/geometry.hpp"
+    #include "navigation/geometry.hpp"
 
 #include <cmath>
 
@@ -9,7 +9,7 @@ float normalizeAngle(float angle) {
         return 0.0f;
     }
     // fmod keeps the magnitude bounded; the two corrections then place the
-    // result inside [-pi, +pi] without a loop (input is already bounded).
+    // result inside [-pi,   +pi] without a loop (input is already bounded).
     float wrapped = std::fmod(angle, kTwoPi);
     if (wrapped > kPi) {
         wrapped -= kTwoPi;

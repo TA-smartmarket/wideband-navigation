@@ -13,35 +13,36 @@ namespace firmware {
 const char* builtinGraphJson() {
     return R"JSON({
   "map": { "map_id": "SMART_MARKET_MAIN", "map_version": 1,
-           "frame_id": "smart_market_map", "width_m": 12.0, "height_m": 8.0 },
+           "frame_id": "smart_market_map", "width_m": 9.0, "height_m": 6.0 },
   "nodes": [
-    { "id": 1,  "x_m": 1.5,  "y_m": 2.0, "type": "entry" },
-    { "id": 2,  "x_m": 4.5,  "y_m": 2.0, "type": "aisle" },
-    { "id": 3,  "x_m": 7.5,  "y_m": 2.0, "type": "aisle" },
-    { "id": 4,  "x_m": 10.5, "y_m": 2.0, "type": "checkout" },
-    { "id": 5,  "x_m": 1.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 6,  "x_m": 4.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 7,  "x_m": 7.5,  "y_m": 4.0, "type": "intersection" },
-    { "id": 8,  "x_m": 10.5, "y_m": 4.0, "type": "intersection" },
-    { "id": 9,  "x_m": 1.5,  "y_m": 6.0, "type": "aisle" },
-    { "id": 10, "x_m": 4.5,  "y_m": 6.0, "type": "destination" },
-    { "id": 11, "x_m": 7.5,  "y_m": 6.0, "type": "destination" },
-    { "id": 12, "x_m": 10.5, "y_m": 6.0, "type": "parking" }
+    { "id": 1,  "x_m": 0.9, "y_m": 1.2, "type": "entry", "name": "masuk" },
+    { "id": 2,  "x_m": 3.3, "y_m": 1.2, "type": "waypoint", "name": "snack-keripik" },
+    { "id": 3,  "x_m": 5.7, "y_m": 1.2, "type": "aisle", "name": "snack-biskuit" },
+    { "id": 4,  "x_m": 8.1, "y_m": 1.2, "type": "checkout", "name": "kasir" },
+    { "id": 5,  "x_m": 0.9, "y_m": 3.0, "type": "intersection", "name": "persimpangan-b1" },
+    { "id": 6,  "x_m": 3.3, "y_m": 3.0, "type": "intersection", "name": "persimpangan-b2" },
+    { "id": 7,  "x_m": 5.7, "y_m": 3.0, "type": "intersection", "name": "persimpangan-b3" },
+    { "id": 8,  "x_m": 8.1, "y_m": 3.0, "type": "intersection", "name": "persimpangan-b4" },
+    { "id": 9,  "x_m": 0.9, "y_m": 4.8, "type": "aisle", "name": "makanan-instan" },
+    { "id": 10, "x_m": 3.3, "y_m": 4.8, "type": "destination", "name": "produk-susu" },
+    { "id": 11, "x_m": 5.693317, "y_m": 4.8, "type": "destination", "name": "produk-roti" },
+    { "id": 12, "x_m": 8.1, "y_m": 4.8, "type": "parking", "name": "parkir" }
   ],
   "edges": [
-    { "from": 1,  "to": 2  }, { "from": 2,  "to": 3  }, { "from": 3,  "to": 4  },
-    { "from": 5,  "to": 6  }, { "from": 6,  "to": 7  }, { "from": 7,  "to": 8  },
-    { "from": 9,  "to": 10 }, { "from": 10, "to": 11 }, { "from": 11, "to": 12 },
-    { "from": 1,  "to": 5  }, { "from": 2,  "to": 6  }, { "from": 3,  "to": 7  },
-    { "from": 4,  "to": 8  }, { "from": 5,  "to": 9  }, { "from": 6,  "to": 10 },
-    { "from": 7,  "to": 11 }, { "from": 8,  "to": 12 }
+    { "from": 1, "to": 2 }, { "from": 1, "to": 5 },
+    { "from": 2, "to": 3 }, { "from": 2, "to": 6 },
+    { "from": 3, "to": 4 }, { "from": 3, "to": 7 },
+    { "from": 4, "to": 8 }, { "from": 5, "to": 9 },
+    { "from": 6, "to": 10 }, { "from": 7, "to": 11 },
+    { "from": 8, "to": 12 }, { "from": 9, "to": 10 },
+    { "from": 10, "to": 11 }, { "from": 11, "to": 12 }
   ]
 })JSON";
 }
 
 const char* builtinNavigationJson() {
     return R"JSON({
-  "map": { "width_m": 12.0, "height_m": 8.0 },
+  "map": { "width_m": 9.0, "height_m": 6.0 },
   "position": {
     "source": "real_uwb",
     "minimum_quality": 0.60,
@@ -64,7 +65,7 @@ const char* builtinNavigationJson() {
     "corner_slowdown_distance_m": 0.80
   },
   "motion": {
-    "max_linear_speed_mps": 0.45,
+    "max_linear_speed_mps": 0.60,
     "min_linear_speed_mps": 0.08,
     "max_angular_speed_radps": 2.2,
     "rotate_in_place_threshold_deg": 55.0,
@@ -82,14 +83,14 @@ const char* builtinNavigationJson() {
       "microsteps": 16,
       "max_step_rate_hz": 20000,
       "min_step_rate_hz": 2,
-      "max_step_accel_hz_per_s": 20000
+      "max_step_accel_hz_per_s": 5000
     },
     "left": { "invert_direction": false },
-    "right": { "invert_direction": false },
+    "right": { "invert_direction": true },
     "enable_odometry": true
   },
   "robot": {
-    "wheel_radius_m": 0.05,
+    "wheel_radius_m": 0.0635,
     "wheel_base_m": 0.32,
     "max_wheel_speed_mps": 0.70,
     "motor_deadband_mps": 0.005,

@@ -17,16 +17,16 @@
     {
       "id": 2,
       "x_m": 3.3,
-      "y_m": 1.2000000000000002,
-      "type": "aisle",
-      "name": "lorong-a1"
+      "y_m": 1.2,
+      "type": "waypoint",
+      "name": "snack-keripik"
     },
     {
       "id": 3,
       "x_m": 5.7,
       "y_m": 1.2000000000000002,
       "type": "aisle",
-      "name": "lorong-a2"
+      "name": "snack-biskuit"
     },
     {
       "id": 4,
@@ -68,7 +68,7 @@
       "x_m": 0.9,
       "y_m": 4.8,
       "type": "aisle",
-      "name": "lorong-c1"
+      "name": "makanan-instan"
     },
     {
       "id": 10,
@@ -79,8 +79,8 @@
     },
     {
       "id": 11,
-      "x_m": 5.7,
-      "y_m": 4.8,
+      "x_m": 5.693317085449654,
+      "y_m": 4.799999999999999,
       "type": "destination",
       "name": "produk-roti"
     },

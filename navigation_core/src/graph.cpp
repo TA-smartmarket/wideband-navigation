@@ -4,10 +4,6 @@
 
 namespace nav {
 
-namespace {
-constexpr float kMinEdgeWeight = 1.0e-4f;  // below this a self-loop is implied
-}
-
 const char* toString(NodeType type) {
     switch (type) {
         case NodeType::INTERSECTION: return "intersection";
@@ -17,6 +13,7 @@ const char* toString(NodeType type) {
         case NodeType::ENTRY: return "entry";
         case NodeType::EXIT: return "exit";
         case NodeType::CHECKOUT: return "checkout";
+        case NodeType::WAYPOINT: return "waypoint";
         default: return "unknown";
     }
 }
@@ -30,6 +27,7 @@ NodeType nodeTypeFromString(const char* text) {
     if (std::strcmp(text, "entry") == 0) return NodeType::ENTRY;
     if (std::strcmp(text, "exit") == 0) return NodeType::EXIT;
     if (std::strcmp(text, "checkout") == 0) return NodeType::CHECKOUT;
+    if (std::strcmp(text, "waypoint") == 0) return NodeType::WAYPOINT;
     return NodeType::UNKNOWN;
 }
 

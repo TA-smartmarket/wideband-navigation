@@ -27,7 +27,7 @@
     "comment": "Sensor model only. filter_alpha stands in for the EKF the UWB team runs: the positioning subsystem publishes a smoothed estimate, so navigation is not fed raw white noise. The gain adapts to noise_std_m (Kalman-like): 1.0 means no smoothing, and it falls to filter_alpha_min as the noise reaches filter_alpha_reference_sigma. The navigation side still rejects samples below navigation.json position.minimum_quality."
   },
   "physics": {
-    "wheel_radius_m": 0.05,
+    "wheel_radius_m": 0.0635,
     "wheel_base_m": 0.32,
     "max_wheel_speed_mps": 0.7,
     "motor_time_constant_s": 0.12,

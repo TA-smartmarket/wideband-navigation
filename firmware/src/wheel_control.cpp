@@ -171,6 +171,9 @@ void WheelControlSystem::update(uint64_t now_us) {
                             encoders_.left().sample().wheel_revolutions,
                             encoders_.right().sample().wheel_revolutions);
         }
+        portENTER_CRITICAL(&mux_);
+        ++snapshot_.pose_reset_count;
+        portEXIT_CRITICAL(&mux_);
     }
     const float nominal_dt = 1.0f / config_.control.wheel_rate_hz;
     float dt_s = previous_update_us_ == 0

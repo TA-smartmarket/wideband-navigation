@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <freertos/event_groups.h>
 
 #include "app_config.hpp"
 #include "navigation/navigation_fsm.hpp"
@@ -46,6 +47,11 @@ struct FirmwareContext {
     /// Telemetry publisher (owned by the telemetry task).
     TelemetryPublisher* telemetry{nullptr};
 
+    /// Setup creates all tasks before they are allowed to access the shared
+    /// navigation/motor context. This removes the scheduler race where a
+    /// high-priority task could run partway through setup().
+    EventGroupHandle_t startup_gate{nullptr};
+
     /// Set by the command task, consumed by the navigation task.
     volatile bool command_stop{false};
     volatile bool command_cancel{false};
@@ -61,6 +67,15 @@ struct FirmwareContext {
     volatile float command_pose_y_m{0.0f};
     volatile float command_pose_heading_rad{0.0f};
     volatile nav::PositionSourceMode position_source{nav::PositionSourceMode::REAL_UWB};
+    /// REAL_UWB uses encoder odometry for motion and requires a fresh,
+    /// agreeing UWB fix. A disagreement removes motor permission immediately.
+    volatile bool position_verified{false};
+    volatile bool uwb_fix_valid{false};
+    volatile float uwb_x_m{0.0f};
+    volatile float uwb_y_m{0.0f};
+    volatile float uwb_quality{0.0f};
+    volatile float uwb_disagreement_m{0.0f};
+    volatile uint64_t uwb_received_ms{0};
 
     /// Dashboard manual control.  The navigation task is the only task that
     /// reads and actuates these values; serial RX merely updates the latest

@@ -76,19 +76,14 @@ set.
 
 ## Remaining risks
 
-1. `config/map.json` and `config/graph.json` currently describe a 9 x 6 m map,
-   while `config/navigation.json` and the firmware's embedded development copy
-   still describe 12 x 8 m. `scripts/validate_config.py` correctly rejects this.
-   Resolve the intended physical map and update all copies together before a
-   hardware navigation test.
-2. Native Unity tests could not run on this workstation because native `gcc` /
+1. Native Unity tests could not run on this workstation because native `gcc` /
    `g++` is not installed. The changed C++ sources did compile successfully for
    ESP32-S3, and Python/dashboard tests passed, but this is not equivalent to a
    native unit-test pass.
-3. The Dijkstra scratch heap is static by design and is not reentrant. The
+2. The Dijkstra scratch heap is static by design and is not reentrant. The
    firmware navigation task is single-owner; dashboard access is serialized by
    a lock.
-4. PID gains cannot be called optimal until wheel RPM step-response data and
+3. PID gains cannot be called optimal until wheel RPM step-response data and
    floor-route data are captured from the assembled trolley. Report software
    baseline, simulation-tested, compile-tested, and hardware-verified states
    separately.

@@ -79,6 +79,7 @@ public:
         portENTER_CRITICAL(&mux_);
         measurement_ = measurement;
         received_at_ms_ = now_ms;
+        has_value_ = true;
         sequence_++;
         portEXIT_CRITICAL(&mux_);
     }
@@ -87,12 +88,13 @@ public:
     /// or when the sample has not changed since `last_sequence`.
     bool read(nav::PositionMeasurement& out, uint64_t& received_at_ms, uint32_t& sequence) {
         portENTER_CRITICAL(&mux_);
-        const bool has_new = sequence_ != sequence;
+        const bool has_new = has_value_ && sequence_ != sequence;
         if (has_new) {
             out = measurement_;
             received_at_ms = received_at_ms_;
             sequence = sequence_;
         }
+        if (!has_value_) sequence = sequence_;
         portEXIT_CRITICAL(&mux_);
         return has_new;
     }
@@ -101,9 +103,9 @@ public:
     uint32_t ageMs(uint64_t now_ms) {
         portENTER_CRITICAL(&mux_);
         const uint64_t received = received_at_ms_;
-        const uint32_t sequence = sequence_;
+        const bool has_value = has_value_;
         portEXIT_CRITICAL(&mux_);
-        if (sequence == 0) {
+        if (!has_value) {
             return UINT32_MAX;
         }
         return now_ms >= received ? static_cast<uint32_t>(now_ms - received) : 0;
@@ -111,7 +113,8 @@ public:
 
     void clear() {
         portENTER_CRITICAL(&mux_);
-        sequence_ = 0;
+        has_value_ = false;
+        ++sequence_;
         received_at_ms_ = 0;
         portEXIT_CRITICAL(&mux_);
     }
@@ -121,6 +124,7 @@ private:
     nav::PositionMeasurement measurement_{};
     uint64_t received_at_ms_{0};
     uint32_t sequence_{0};
+    bool has_value_{false};
 };
 
 /// Number of malformed position lines observed (troubleshooting aid).

@@ -2,6 +2,14 @@
 
 ## Provisional laboratory supply
 
+The proposed **12 V / 5 A (60 W)** source is not approved for a two-NEMA-23
+drive system. It is below the preliminary 70--120 W two-axis motion envelope
+before DC-DC losses, acceleration margin, wiring loss, or thermal derating.
+Stepper phase current is controlled by the TB6600 chopper and is not equal to
+input current, so this conclusion does not use the invalid calculation
+`2 motors x 2 phases x 4 A`. It may be used only for logic-only work with motor
+power physically disconnected.
+
 Use a regulated, current-limited 24 V DC bench supply rated for at least 10 A
 (240 W) for the initial two-driver setup, subject to confirmation that the
 purchased TB6600 modules accept 24 V. This is intentionally a supply-side
